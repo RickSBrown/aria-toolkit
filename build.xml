@@ -49,8 +49,8 @@ scope = null;
 	
 	<target name="dist" depends="compile" description="Builds the tarball for distribution">
 		<mkdir dir="${dist.dir}"/>
-		<tar destfile="${dist.dir}/aria-toolkit.tar" basedir="${build.dir}"/>
-		<!--gzip destfile="${dist.dir}/aria-toolkit.tar.gz" src="${dist.dir}/aria-toolkit.tar"/-->
+		<tar destfile="${dist.dir}/aria-toolkit-${build.version}.tar" basedir="${build.dir}"/>
+		<!--gzip destfile="${dist.dir}/aria-toolkit.tar.gz" src="${dist.dir}/aria-toolkit-${build.version}.tar"/-->
 	</target>
 
 	<target name="compile" depends="build" description="Build and minify the project">
