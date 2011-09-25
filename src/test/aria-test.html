@@ -1,0 +1,149 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>Aria</title>
+		<script src="js/aria-${build.version}.js"></script>
+		<script src="js/aria.validator-${build.version}.js"></script>
+		<script>
+			var globalStates = ["aria-atomic", "aria-busy", "aria-controls", "aria-describedby",
+			                    "aria-disabled", "aria-dropeffect", "aria-flowto", "aria-grabbed",
+			                    "aria-haspopup", "aria-hidden", "aria-invalid", "aria-label",
+			                    "aria-labelledby", "aria-live", "aria-owns", "aria-relevant"];
+			
+			//todo replace with real unit testing framework
+			function assertEquals(a, b)
+			{
+				if(!(a === b))
+				{
+					throw new Error("assertion error " + arguments.callee.caller.name);
+				}
+			}
+			
+			function testGetScope()
+			{
+				var expected = ["list"],
+					result = ARIA.getScope("listitem");
+					assertEquals(expected.join(), result.join());
+			}
+			
+			function testGetScopeManyMatches()
+			{
+				var expected = ["grid", "rowgroup", "treegrid"],
+					result = ARIA.getScope("row");
+					assertEquals(expected.sort().join(), result.sort().join());
+			}
+			
+			function testGetScopeNoMatches()
+			{
+				var expected = [],
+					result = ARIA.getScope("listbox");
+					assertEquals(expected.join(), result.join());
+			}
+			
+			function testGetMustContain()
+			{
+				var expected = ["option"],
+					result = ARIA.getMustContain("listbox");
+					assertEquals(expected.join(), result.join());
+			}
+			
+			function testGetMustContainManyMatches()
+			{
+				var expected = ["listbox", "textbox"],
+					result = ARIA.getMustContain("combobox");
+					assertEquals(expected.sort().join(), result.sort().join());
+			}
+			
+			function testGetMustContainNoMatches()
+			{
+				var expected = [],
+					result = ARIA.getMustContain("option");
+					assertEquals(expected.join(), result.join());
+			}
+			
+			function testGetSupported()
+			{
+				var result = ARIA.getSupported("checkbox");
+				globalStates.forEach(function(next){
+					assertEquals(ARIA.SUPPORTED, result[next]);
+				});
+				assertEquals(ARIA.REQUIRED, result["aria-checked"]);
+				assertEquals("undefined", typeof result["aria-selected"]);
+			}
+			
+			function testGetSupportedNoRole()
+			{
+				var result = ARIA.getSupported("");
+				globalStates.forEach(function(next){
+					assertEquals(ARIA.SUPPORTED, result[next]);
+				});
+				assertEquals("undefined", typeof result["aria-checked"]);
+			}
+			
+			function testIsValid()
+			{
+				var result = ARIA.isValid(document);
+				assertEquals(false, result);
+				console.log("passed");
+			}
+			
+			testGetScope();
+			console.log("passed");
+			testGetScopeManyMatches();
+			console.log("passed");
+			testGetScopeNoMatches();
+			console.log("passed");
+			testGetMustContain();
+			console.log("passed");
+			testGetMustContainManyMatches();
+			console.log("passed");
+			testGetMustContainNoMatches();
+			console.log("passed");
+			testGetSupported();
+			console.log("passed");
+			testGetSupportedNoRole();
+			console.log("passed");
+		</script>
+	</head>
+	<body onload="testIsValid();">
+		<!-- HTML based strongly on examples given here: http://www.w3.org/TR/wai-aria-practices/ -->
+		<p>Errors will be logged in the console!</p>
+		<p>If you are running this in IE make sure it's IE9 or later.</p>
+		<div role="menubar" aria-checked="true"><!-- Unsupported state -->		
+		  <!--
+		    File menu: File menuitem has an aria-haspopup attribute set to 'true'.
+		    That popup div follows immediately below.
+		  -->
+		  <div role="menuitem" aria-haspopup="true" id="fileMenu">File</div>
+		  <div role="menu" aria-labelledby="fileMenu">
+		    <div role="menuitem">Open</div>
+		    <div role="menuitem">Save</div>
+		    <div role="menuitem">Save as ...</div>
+		    ...
+		  </div>
+		  <!--
+		    View menu:
+		  -->  
+		  <div role="menuitem" aria-haspopup="true" id="viewMenu">View</div>
+		  <div role="menu" aria-labelledby="viewMenu">
+		    <div role="menuitem">Normal</div>
+		    <div role="menuitem">Outline</div>
+		    <!--
+		      The View's Zoom menuitem has aria-haspopup='true' as it leads to a
+		      submenu.
+		    -->
+		    <div role="menuitem" aria-haspopup="true" id="zoomSubMenu">Zoom</div>
+		    <div role="menu" aria-labelledby="zoomSubMenu">
+		      <div role="menuitem">50%</div>
+		      <div role="menuitem">75%</div>
+		      <div role="menuitem">100%</div>
+		      <div role="menuitem">150%</div>
+		      <div role="menuitem">200%</div>
+		    </div>
+		  </div>
+		</div>
+		<div role="menu"></div><!-- Missing required descendants -->
+		<div role="menuitem"></div><!-- Missing required ancestor -->
+		<div role="checkbox"></div><!-- Missing required state -->
+	</body>
+</html>
