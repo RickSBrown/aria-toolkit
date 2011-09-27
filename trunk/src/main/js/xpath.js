@@ -6,7 +6,7 @@
  */
 function query(expr, firstMatch, doc)
 {
-	var next, result, match, nsResolver;
+	var next, result, match, nsResolver, i, len;
 	if(doc.ownerDocument)
 	{
 		doc = doc.ownerDocument;
@@ -37,7 +37,15 @@ function query(expr, firstMatch, doc)
 		}
 		else 
 		{
-			result = doc.selectNodes(expr);
+			result = [];
+			match = doc.selectNodes(expr);
+			if(match)
+			{
+				for(i=0, len=match.length; i<len; i++)
+				{
+					result[result.length] = match[i];
+				}
+			}
 		}
 	}
 	return result;
