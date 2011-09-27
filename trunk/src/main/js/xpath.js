@@ -2,7 +2,7 @@
  * @param {string} expr The xpath expression
  * @param {boolean} firstMatch set to true to return a single node only
  * @param doc The XML dom to query
- * @return node or collection
+ * @return {Element|Array} The result of the xpath expression
  */
 function query(expr, firstMatch, doc)
 {
@@ -45,18 +45,23 @@ function query(expr, firstMatch, doc)
 
 function ieNamespaceResolver(doc)
 {
-	var i, next, namespaceRe = /^xmlns/, namespaces = "",
+	var i, next, namespaces, attributes, namespaceRe;
+	if(doc.getProperty("SelectionNamespaces"))
+	{
+		namespaces = "";
 		attributes = doc.documentElement.attributes;
-	for(i=attributes.length - 1; i>=0; i--)
-	{
-		next = attributes[i];
-		if(namespaceRe.test(next.name))
+		namespaceRe = ieNamespaceResolver.nsRe || (ieNamespaceResolver.nsRe = /^xmlns/);
+		for(i=attributes.length - 1; i>=0; i--)
 		{
-			namespaces  += next.name + "='" + next.value + "' ";
+			next = attributes[i];
+			if(namespaceRe.test(next.name))
+			{
+				namespaces  += next.name + "='" + next.value + "' ";
+			}
 		}
-	}
-	if(namespaces)
-	{
-		doc.setProperty("SelectionNamespaces", namespaces);
+		if(namespaces)
+		{
+			doc.setProperty("SelectionNamespaces", namespaces);
+		}
 	}
 }

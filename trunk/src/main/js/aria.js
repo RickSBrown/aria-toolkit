@@ -10,7 +10,7 @@ function ARIA(config)
 {
 	var $this = this,
 		ANCHOR_ONLY_RE = /^.*?#/,
-		xmlDoc = config.loadXml(config.url),
+		xmlDoc,
 		baseRole,//at time of writing (and probably forever) this will be roleType
 		instances = {},
 		constructors = {};
@@ -20,6 +20,19 @@ function ARIA(config)
 
 	$this.getScope = getScopeFactory("role:scope");
 	$this.getMustContain = getScopeFactory("role:mustContain");
+	
+	/**
+	 * Call to perform one-time initialisation routine
+	 */
+	function initialise()
+	{
+		if(!baseRole)
+		{
+			xmlDoc = config.loadXml(config.url);
+			buildConstructors();
+		}
+	}
+	
 	/**
 	 * Find all the aria attributes supported/required by this element/role.
 	 * Note that if role is anything other than a known ARIA role then the supported
@@ -34,6 +47,7 @@ function ARIA(config)
 	$this.getSupported = function(role)
 	{
 		var result, in$tance, F = function(){};
+		initialise();
 		if(role)
 		{
 			if(role.getAttribute)
@@ -75,17 +89,19 @@ function ARIA(config)
 		 * @example getMustContain("menu");
 		 */
 		return function(role){
+			initialise();
 			return cache[role] || (cache[role] = getRoleNodes(role, false, nodeName));
 		};
 	}
 	
+	/*
+	 * @param {string} role An ARIA role
+	 * @return {object} An instance the internal ARIA class for this role 
+	 * 	which stores aria property support information
+	 */
 	function getInstance(role)
 	{
 		var con$tructor, in$tance = instances[role];
-		if(!baseRole)
-		{
-			buildConstructors();
-		}
 		if(in$tance === undefined)
 		{
 			con$tructor = constructors[role];
