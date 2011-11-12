@@ -20,6 +20,8 @@ function ARIA(config)
 
 	$this.getScope = getScopeFactory("role:scope");
 	$this.getMustContain = getScopeFactory("role:mustContain");
+	$this.getScopedTo = getScopedFactory("role:scope");
+	$this.getScopedBy = getScopedFactory("role:mustContain");
 	
 	/**
 	 * Call to perform one-time initialisation routine
@@ -38,7 +40,7 @@ function ARIA(config)
 	 * Note that if role is anything other than a known ARIA role then the supported
 	 * attributes will be the global ARIA attributes.
 	 * @see http://www.w3.org/TR/wai-aria/states_and_properties#global_states
-	 * 
+	 *
 	 * @param {string|Element} role An ARIA role or a DOM element
 	 * @return {Object} an object whose properties are the supported attributes. The values of these properties
 	 * will be either SUPPORTED or REQUIRED
@@ -72,6 +74,43 @@ function ARIA(config)
 		}
 		return result;
 	};
+	
+	function getScopedFactory(nodeName)
+	{
+		var cache = {};
+		/**
+		 * Given an ARIA role will find the container role/s (if any) which "contain" this role. 
+		 *
+		 * This is to allow for asymetrical scoping in ARIA. For example, the role
+		 * "menubar" is not required to contain anything, therefore:
+		 * getMustContain("menubar") returns empty array
+		 * However: getScopedTo("menubar") returns ["menuitem", "menuitemcheckbox", "menuitemradio"]
+		 * This is useful when trying to determine what a particlar role SHOULD contain, not must
+		 * contain (and not CAN contain because anything can contain anything).
+		 * @param {string} [role] An ARIA role
+		 * @return {Array} An array of strings representing ARIA roles
+		 */
+		return function getScopedTo(role)
+		{
+			var result, expression;
+			if(role)
+			{
+				//owl:Class[child::role:scope[@rdf:resource='#role']]/@rdf:ID
+				result = cache[role];
+				if(!result)
+				{
+					initialise();
+					expression = "//owl:Class[child::" + nodeName + "[@rdf:resource='#" + role + "']]/@rdf:ID";
+					result = cache[role] = cleanRoles(config.query(expression, false, xmlDoc));
+				}
+			}
+			else
+			{
+				throw new TypeError("role can not be null");
+			}
+			return result;
+		};
+	}
 
 	/*
 	 * Creates methods for getScope and getMustContain.
@@ -83,14 +122,26 @@ function ARIA(config)
 		/**
 		 * getScope: Find the "Required Context Role" for this role
 		 * getMustContain: Find the "Required Owned Elements" for this role
-		 * @param {string} role An ARIA role 
+		 * @param {string} [role] An ARIA role OR if not provided will return ALL
+		 * 	roles that have a "Required Context Role" (for getScope) or ALL roles
+		 *  that have "Required Owned Elements" (for getMustContain)
 		 * @return {Array} An array of strings representing ARIA roles
 		 * @example getScope("menuitem");
 		 * @example getMustContain("menu");
 		 */
 		return function(role){
+			var result;
 			initialise();
-			return cache[role] || (cache[role] = getRoleNodes(role, false, nodeName));
+			if(role)
+			{
+				result = cache[role] || (cache[role] = getRoleNodes(role, false, nodeName));
+			}
+			else
+			{
+				role = "*";
+				result = cache[role] || (cache[role] = getScopedRoles(nodeName));
+			}
+			return result;
 		};
 	}
 	
@@ -131,11 +182,26 @@ function ARIA(config)
 		result = config.query(xpathQuery, firstMatch, xmlDoc);
 		if(child)
 		{
-			result = result.map(function(next){
-				return next.nodeValue.replace(ANCHOR_ONLY_RE, "");
-			});
+			result = cleanRoles(result);
 		}
 		return result;
+	}
+	
+	/*
+	 * @param {string} type either "role:scope" or "role:mustContain"
+	 */
+	function getScopedRoles(type)
+	{
+		var expression = "//owl:Class[count(" + type + ")>0]/@rdf:ID",
+			result = config.query(expression, false, xmlDoc);
+		return cleanRoles(result);
+	}
+	
+	function cleanRoles(roles)
+	{
+		return roles.map(function(next){
+				return next.nodeValue.replace(ANCHOR_ONLY_RE, "");
+			});
 	}
 	
 	/*
@@ -156,8 +222,15 @@ function ARIA(config)
 		 */
 		function buildConstructor(classElement)
 		{
-			var i, superclasses, required, supported,
+			var i, superclasses, required, supported, name;
+			if(typeof classElement.getAttributeNS !== "undefined")
+			{
+				name = classElement.getAttributeNS("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "ID");
+			}
+			else
+			{
 				name = classElement.getAttribute("rdf:ID");
+			}
 			if(!constructors[name])
 			{
 				superclasses = getRoleNodes(name, false, "rdfs:subClassOf");
@@ -204,8 +277,8 @@ function ARIA(config)
 		function constructorFactory(required, supported, superclassRoles)
 		{
 			var i, prop, len, superClass, result = /**@constructor*/function(){
-				applyStates(this, required, $this.REQUIRED);
-				applyStates(this, supported, $this.SUPPORTED);
+					applyStates(this, required, $this.REQUIRED);
+					applyStates(this, supported, $this.SUPPORTED);
 			};
 			try
 			{
@@ -235,7 +308,7 @@ function ARIA(config)
 			}
 			finally
 			{
-				superclassRoles = null;
+					superclassRoles = null;
 			}
 		}
 	}
