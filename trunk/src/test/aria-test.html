@@ -15,6 +15,7 @@
 			{
 				if(!(a === b))
 				{
+					console.error("Not equal: ", a, b);
 					throw new Error("assertion error " + arguments.callee.caller.name);
 				}
 			}
@@ -87,6 +88,20 @@
 				console.log("passed");
 			}
 			
+			function testGetScopedTo()
+			{
+				var expected = ["menuitem", "menuitemcheckbox", "menuitemradio"],
+					result = ARIA.getScopedTo("menubar");
+					assertEquals(expected.join(), result.join());
+			}
+			
+			function testGetScopedBy()
+			{
+				var expected = ["listbox"],
+					result = ARIA.getScopedBy("option");
+					assertEquals(expected.join(), result.join());
+			}
+			
 			testGetScope();
 			console.log("passed");
 			testGetScopeManyMatches();
@@ -102,6 +117,10 @@
 			testGetSupported();
 			console.log("passed");
 			testGetSupportedNoRole();
+			console.log("passed");
+			testGetScopedTo();
+			console.log("passed");
+			testGetScopedBy();
 			console.log("passed");
 		</script>
 	</head>

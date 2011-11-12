@@ -7,7 +7,7 @@
 	<property name="build.dir" location="build"/>
 	<property name="dist.dir" location="dist"/>
 	<property name="test.build.dir" location="${build.dir}"/>
-	<property name="build.version" value="0.2"/>
+	<property name="build.version" value="0.3"/>
 
 	<target name="clean">
 		<delete dir="${build.dir}"/>
