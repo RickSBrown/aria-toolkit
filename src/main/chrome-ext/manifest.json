@@ -8,8 +8,12 @@
 		"persistent": false,
 		"scripts": ["background.js"]
 	},
+	"icons": {
+		"16": "icon/16/Valide.png",
+		"48": "icon/48/Valide.png",
+		"128": "icon/128/Valide.png"},
 	"browser_action": {
-		"default_icon": "animals-ladybug.png",
+		"default_icon": "icon/48/Valide.png",
 		"default_title": "Validate ARIA"
 	},
 	"name": "ARIA Validator",
@@ -19,5 +23,5 @@
 		"js": ["contentscript.js", "js/aria-${build.version}.js", "js/aria.validator-${build.version}.js"]
 	}
 	],
-	"permissions": ["activeTab", "storage"]
+	"permissions": ["activeTab", "storage", "tabs"]
 }

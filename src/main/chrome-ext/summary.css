@@ -3,16 +3,36 @@
  *
  * Copyright (C) 2014  Rick Brown
  */
+body
+{
+	font-family: 'Chrome Droid Sans', 'Droid Sans Fallback', 'Lucida Grande', 'sans-serif';
+	font-size: small;
+	background-color: #E5F4FA;
+}
+
+div.credits
+{
+	position: fixed;
+	bottom: 0px;
+	width: 90%;
+	text-align: center;
+	opacity: .9;
+}
+
 dt
 {
 	float:left;
 }
+
 body .validatorResults
 {
+	background-color: whitesmoke;
 	margin-bottom: 2em;
-	border: 1px dotted;
+	border: 2px outset;
 	padding: 1em;
+	display: inline-block;
 }
+
 body .validatorResults dd, body .validatorResults dt
 {
 	margin-right: 1em;
@@ -29,10 +49,30 @@ body .result
 body .fail .result
 {
 	color: red;
-	background-image: url('dialog-error-7.png');
+	background-image: url('icon/48/Erreur.png');
 }
 body .pass .result
 {
 	color: green;
-	background-image: url('dialog-clean.png');
+	background-image: url('icon/48/Valide.png');
+}
+
+h1
+{
+	font-size: 1.5em;
+}
+
+h2
+{
+	font-size: 1.2em;
+}
+
+h2
+{
+	font-size: 1em;
+}
+
+h2,h3{
+	margin-bottom: .1em;
+	margin-top: .1em;
 }
