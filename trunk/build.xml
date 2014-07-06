@@ -7,7 +7,8 @@
 	<property name="build.dir" location="build"/>
 	<property name="dist.dir" location="dist"/>
 	<property name="test.build.dir" location="${build.dir}"/>
-	<property name="build.version" value="0.3"/>
+	<property name="build.version" value="0.4"/>
+	<property name="chrome-ext-dir-name" value="chrome-ext"/>
 
 	<target name="clean">
 		<delete dir="${build.dir}"/>
@@ -21,7 +22,7 @@
 				<![CDATA[
 /**
  * ARIA-js
- * Copyright 2011, Rick Brown
+ * Copyright 2014, Rick Brown
  */
 (function(){"use strict";
 var scope = this || window;
@@ -37,7 +38,53 @@ scope = null;
 		<copy file="LICENSE" todir="${build.dir}"/>
 		<copy file="README" todir="${build.dir}"/>
 	</target>
-	
+
+	<target name="buildChromeExt" depends="compile">
+		<property name="chromeExtDistDir" location="${build.dir}/${chrome-ext-dir-name}"/>
+		<mkdir dir="${chromeExtDistDir}"/>
+
+		<fileset dir="${src.dir}/main/js" includes="*.js" excludes="*.validator.js"/>
+		<copy todir="${chromeExtDistDir}">
+			<fileset dir="${build.dir}">
+				<exclude name="**/*-debug.js"/>
+				<include name="**/*.rdf"/>
+				<include name="**/*.js"/>
+			</fileset>
+		</copy>
+		<copy todir="${chromeExtDistDir}">
+			<fileset dir="${src.dir}/main/${chrome-ext-dir-name}">
+				<exclude name="*.js"/>
+				<exclude name="*.png"/>
+				<include name="*"/>
+			</fileset>
+			<filterchain>
+				<expandproperties />
+			</filterchain>
+		</copy>
+		<copy todir="${chromeExtDistDir}">
+			<fileset dir="${src.dir}/main/${chrome-ext-dir-name}">
+				<include name="*.png"/>
+			</fileset>
+		</copy>
+		<!-- TODO probably going to need a debug build option with copy instead of compile -->
+		<jscomp compilationLevel="simple" debug="false" output="${chromeExtDistDir}/background.js">
+			<sources dir="${src.dir}/main/${chrome-ext-dir-name}">
+				<file name="background.js"/>
+			</sources>
+		</jscomp>
+		<jscomp compilationLevel="simple" debug="false" output="${chromeExtDistDir}/contentscript.js">
+			<sources dir="${src.dir}/main/${chrome-ext-dir-name}">
+				<file name="contentscript.js"/>
+			</sources>
+		</jscomp>
+		<jscomp compilationLevel="simple" debug="false" output="${chromeExtDistDir}/summary.js">
+			<sources dir="${src.dir}/main/${chrome-ext-dir-name}">
+				<file name="summary.js"/>
+			</sources>
+		</jscomp>
+		<zip destfile="${build.dir}/aria-validator-chrome.zip" basedir="${chromeExtDistDir}"/>
+	</target>
+
 	<target name="test" depends="compile" description="Build tests for the project">
 		<mkdir dir="${test.build.dir}"/>
 		<copy file="${src.dir}/test/aria-test.html" todir="${test.build.dir}">
@@ -46,7 +93,7 @@ scope = null;
 			</filterchain>
 		</copy>
 	</target>
-	
+
 	<target name="dist" depends="compile" description="Builds the tarball for distribution">
 		<mkdir dir="${dist.dir}"/>
 		<tar destfile="${dist.dir}/aria-toolkit-${build.version}.tar" basedir="${build.dir}"/>
