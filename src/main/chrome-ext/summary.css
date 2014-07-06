@@ -1,0 +1,38 @@
+/*
+ * Style for ARIA Validator summary.
+ *
+ * Copyright (C) 2014  Rick Brown
+ */
+dt
+{
+	float:left;
+}
+body .validatorResults
+{
+	margin-bottom: 2em;
+	border: 1px dotted;
+	padding: 1em;
+}
+body .validatorResults dd, body .validatorResults dt
+{
+	margin-right: 1em;
+}
+
+body .result
+{
+	background-repeat: no-repeat;
+	background-size: 1em;
+	background-position: left center;
+	padding-left: 1.1em;
+}
+
+body .fail .result
+{
+	color: red;
+	background-image: url('dialog-error-7.png');
+}
+body .pass .result
+{
+	color: green;
+	background-image: url('dialog-clean.png');
+}

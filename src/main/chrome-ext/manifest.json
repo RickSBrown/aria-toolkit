@@ -1,0 +1,23 @@
+{
+	"manifest_version": 2,
+	"name": "ARIA Validator",
+	"description": "Scans page for WAI-ARIA implementation issues. Not an HTML5 validtor, just ARIA and nothing else.",
+	"author": "Rick Brown",
+	"version": "${build.version}",
+	"background": {
+		"persistent": false,
+		"scripts": ["background.js"]
+	},
+	"browser_action": {
+		"default_icon": "animals-ladybug.png",
+		"default_title": "Validate ARIA"
+	},
+	"name": "ARIA Validator",
+	"content_scripts": [
+	{
+		"matches": ["<all_urls>"],
+		"js": ["contentscript.js", "js/aria-${build.version}.js", "js/aria.validator-${build.version}.js"]
+	}
+	],
+	"permissions": ["activeTab", "storage"]
+}
