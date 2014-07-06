@@ -23,6 +23,12 @@ function ARIA(config)
 	$this.getScopedTo = getScopedFactory("role:scope");
 	$this.getScopedBy = getScopedFactory("role:mustContain");
 	
+	$this.setRdf = function(rdf){
+		xmlDoc = rdf;
+	};
+	$this.getRdf = function(rdf){
+		return xmlDoc;
+	};
 	/**
 	 * Call to perform one-time initialisation routine
 	 */
@@ -30,7 +36,7 @@ function ARIA(config)
 	{
 		if(!baseRole)
 		{
-			xmlDoc = config.loadXml(config.url);
+			xmlDoc = xmlDoc || config.loadXml(config.url);
 			buildConstructors();
 		}
 	}
@@ -241,10 +247,10 @@ function ARIA(config)
 				required = getRoleNodes(name, false, "role:requiredState");
 				supported = getRoleNodes(name, false, "role:supportedState");
 				constructors[name] = constructorFactory(required, supported, superclasses);
-				window.console.log("Building constructor:", name);
+				//console.log("Building constructor:", name);
 				if(!baseRole)
 				{
-					window.console.log("Setting baseRole to:", name);
+					console.log("Setting baseRole to:", name);
 					baseRole = name;
 				}
 			}
