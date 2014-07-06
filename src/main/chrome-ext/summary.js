@@ -22,22 +22,6 @@
 				container.parentNode.removeChild(container);
 			}
 			scope.document.body.insertAdjacentHTML("beforeend", html);
-			addCssClass(scope.document.body);
-		}
-	}
-
-	/**
-	 * Adds any additional css classes for styling purposes.
-	 * The underlying validator engine does not know the specifics of the Chrome extension.
-	 * @param {Element} body The body element.
-	 */
-	function addCssClass(body)
-	{
-		var i, next, elements = body.querySelectorAll("h1,h2,h3,dl,ul,p");
-		for(i=0; i<elements.length; i++)
-		{
-			next = elements[i];
-			next.classList.add("chrome-bootstrap");
 		}
 	}
 })(this);
