@@ -15,6 +15,7 @@
 		if(html && html.length)
 		{
 			scope.chrome.tabs.create({url : "summary.html"}, function(tab){
+				tab.favIconUrl = "icon/48/Valide.png";
 				window.setTimeout(function(){
 					scope.chrome.tabs.sendMessage(tab.id, { html: html});
 				}, 250);
