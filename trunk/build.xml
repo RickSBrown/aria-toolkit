@@ -1,7 +1,8 @@
-<project basedir="." default="compile">
+<project basedir="." default="dist">
 
 	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpath="${basedir}/libs/closure-compiler/compiler.jar"/>
 
+<!--	<property name="enable.debug" value="true"/>-->
 	<property name="aria.rdf.url" value="xml/aria-1.rdf"/>
 	<property name="src.dir" location="src"/>
 	<property name="build.dir" location="build"/>
@@ -39,10 +40,13 @@ scope = null;
 		<copy file="README" todir="${build.dir}"/>
 	</target>
 
-	<target name="buildChromeExt" depends="compile">
+	<target name="buildChromeExt" depends="dist, initChromeExt, debugChromeExt, compileChromeExt">
+		<zip destfile="${build.dir}/aria-validator-chrome.zip" basedir="${chromeExtDistDir}"/>
+	</target>
+	
+	<target name="initChromeExt">
 		<property name="chromeExtDistDir" location="${build.dir}/${chrome-ext-dir-name}"/>
 		<mkdir dir="${chromeExtDistDir}"/>
-
 		<fileset dir="${src.dir}/main/js" includes="*.js" excludes="*.validator.js"/>
 		<copy todir="${chromeExtDistDir}">
 			<fileset dir="${build.dir}">
@@ -54,8 +58,8 @@ scope = null;
 		<copy todir="${chromeExtDistDir}">
 			<fileset dir="${src.dir}/main/${chrome-ext-dir-name}">
 				<exclude name="*.js"/>
-				<exclude name="*.png"/>
-				<include name="*"/>
+				<exclude name="**/*.png"/>
+				<include name="**/*"/>
 			</fileset>
 			<filterchain>
 				<expandproperties />
@@ -63,10 +67,24 @@ scope = null;
 		</copy>
 		<copy todir="${chromeExtDistDir}">
 			<fileset dir="${src.dir}/main/${chrome-ext-dir-name}">
-				<include name="*.png"/>
+				<include name="**/*.png"/>
 			</fileset>
 		</copy>
-		<!-- TODO probably going to need a debug build option with copy instead of compile -->
+	</target>
+	
+	<target name="debugChromeExt" if="enable.debug">
+		<copy todir="${chromeExtDistDir}">
+			<fileset dir="${src.dir}/main/${chrome-ext-dir-name}">
+				<include name="*.js"/>
+			</fileset>
+			<filterchain>
+				<expandproperties />
+			</filterchain>
+		</copy>
+		<echo>DEBUG MODE IS ON!!! DO NOT DISTRIBUTE THIS BUILD!</echo>
+	</target>
+	
+	<target name="compileChromeExt" unless="enable.debug">
 		<jscomp compilationLevel="simple" debug="false" output="${chromeExtDistDir}/background.js">
 			<sources dir="${src.dir}/main/${chrome-ext-dir-name}">
 				<file name="background.js"/>
@@ -82,7 +100,6 @@ scope = null;
 				<file name="summary.js"/>
 			</sources>
 		</jscomp>
-		<zip destfile="${build.dir}/aria-validator-chrome.zip" basedir="${chromeExtDistDir}"/>
 	</target>
 
 	<target name="test" depends="compile" description="Build tests for the project">
@@ -94,13 +111,22 @@ scope = null;
 		</copy>
 	</target>
 
-	<target name="dist" depends="compile" description="Builds the tarball for distribution">
+	<target name="dist" depends="build, debug, compile" description="Builds the tarball for distribution">
 		<mkdir dir="${dist.dir}"/>
 		<tar destfile="${dist.dir}/aria-toolkit-${build.version}.tar" basedir="${build.dir}"/>
 		<!--gzip destfile="${dist.dir}/aria-toolkit.tar.gz" src="${dist.dir}/aria-toolkit-${build.version}.tar"/-->
 	</target>
+	
+	<target name="debug" if="enable.debug">
+		<copy todir="${build.dir}/js">
+			<fileset dir="${build.dir}/js">
+				<include name="*-debug.js"/>
+			</fileset>
+			<globmapper from="*-debug.js" to="*.js"/>
+		</copy>
+	</target>
 
-	<target name="compile" depends="build" description="Build and minify the project">
+	<target name="compile" unless="enable.debug">
 		<jscomp compilationLevel="simple" debug="false" output="${build.dir}/js/aria-${build.version}.js">
 			<sources dir="${build.dir}/js">
 				<file name="aria-${build.version}-debug.js"/>
