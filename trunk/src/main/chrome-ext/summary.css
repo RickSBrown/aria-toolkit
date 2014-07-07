@@ -31,6 +31,9 @@ body .validatorResults
 	border: 2px outset;
 	padding: 1em;
 	display: inline-block;
+	width: 30%;
+	overflow-x: scroll;
+	float:left;
 }
 
 body .validatorResults dd, body .validatorResults dt
@@ -43,7 +46,8 @@ body .result
 	background-repeat: no-repeat;
 	background-size: 1em;
 	background-position: left center;
-	padding-left: 1.1em;
+	padding-left: 1.5em;
+	font-size:large;
 }
 
 body .fail .result
@@ -57,19 +61,50 @@ body .pass .result
 	background-image: url('icon/48/Valide.png');
 }
 
+ul
+{
+	list-style-type: none;
+	list-style-image:none;
+}
+
+ul.fail li
+{
+	margin-bottom: .2em;
+	padding-left: 1.5em;
+	background-image: url('icon/16/Erreur.png');
+	background-repeat: no-repeat;
+}
+
+ul.roles li
+{
+	display: inline-block;
+}
+
+ul.roles li:after
+{
+	display: inline-block;
+	margin-right: .5em;
+	content: ',';
+}
+
+ul.roles li:last-of-type:after
+{
+	content: '';
+}
+
 h1
 {
-	font-size: 1.5em;
+	font-size: 2.2em;
 }
 
 h2
+{
+	font-size: 1.6em;
+}
+
+h3
 {
 	font-size: 1.2em;
-}
-
-h2
-{
-	font-size: 1em;
 }
 
 h2,h3{
