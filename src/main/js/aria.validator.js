@@ -45,6 +45,7 @@
 
 	Summary.prototype.toHtml = function(){
 		var roles = this.getRoles(),
+			dupCount = 0, next, i,
 			warnings = this.getWarnings(),
 			passed = !warnings.length,
 			cssClass = (passed? "pass": "fail"),
@@ -57,25 +58,57 @@
 			result[result.length] = (passed? "Pass": "Fail");
 			result[result.length] = "</p>";
 		}
-		result[result.length] = "<h2>Page Details</h2><dl><dt>URL</dt><dd>";
+		result[result.length] = "<h2>Page Details</h2><dl><dt>URL</dt><dd><a href='";
 		result[result.length] = this.url;
-		result[result.length] = "</dd><dt>Time</dt><dd>";
+		result[result.length] = "' target='_blank'>";
+		result[result.length] = this.url;
+		result[result.length] = "</a></dd><dt>";
+		if(this.framesTotal)
+		{
+			result[result.length] = "Frames Checked</dt><dd>";
+			result[result.length] = this.framesChecked + "/" + this.framesTotal;
+			result[result.length] = "</dd><dt>";
+		}
+		result[result.length] = "Time</dt><dd>";
 		result[result.length] = new Date();
 		result[result.length] = "</dd></dl>";
 		result[result.length] = "<h2>Roles Validated</h2>";
 		if(roles.length)
 		{
-			result[result.length] = "<ul>";
+			result[result.length] = "<ul class='roles'>";
 			result = result.concat(roles.map(function(role){
 				return ["<li>", role, "</li>"].join("");
 			}));
 			result[result.length] = "</ul>";
 			if(warnings.length)
 			{
-				result[result.length] = "<h2>Warnings</h2><ul>";
-				result = result.concat(warnings.map(function(message){
-					return ["<li>", message.role, " ", message.msg, "</li>"].join("");
-				}));
+				warnings = warnings.map(function(message){
+					return ["<li><a target='_blank' href='http://www.w3.org/TR/wai-aria/roles#", message.role, "'>", message.role, "</a> ", message.msg, "</li>"].join("");
+				});
+				warnings.sort();
+				result[result.length] = "<h2>Warnings</h2><ul class='fail'>";
+				for(i=0; i<warnings.length; i++)
+				{
+					next = warnings[i];
+					if(result[result.length - 1] === next)
+					{
+						dupCount++;
+					}
+					else
+					{
+						if(dupCount)
+						{
+							result[result.length - 1] = result[result.length - 1].replace("</li>", " (repeated " + dupCount + " more times)</li>");
+							dupCount = 0;
+						}
+						result[result.length] = next;
+					}
+				}
+				if(dupCount)
+				{
+					result[result.length - 1] = result[result.length - 1].replace("</li>", " (repeated " + dupCount + " more times)</li>");
+					dupCount = 0;
+				}
 				result[result.length] = "</ul>";
 			}
 			else
@@ -139,6 +172,8 @@
 			next = getSet[i];
 			this["add"+ next](summary["get" + next]());
 		}
+		this.framesTotal += summary.framesTotal;
+		this.framesChecked += summary.framesChecked;
 	};
 
 	/**
@@ -147,6 +182,8 @@
 	 */
 	function Summary()
 	{
+		this.framesTotal = 0;
+		this.framesChecked = 0;
 		this.name = "";
 		this.url = null;
 		this.warnings = [];
@@ -172,34 +209,29 @@
 		$this.check = function(window)
 		{
 			var result = [], document, body, frames, i, next, frameSummary;
-			try
+			if(window && ((document = window.document) && (body = document.body)))
 			{
-				if(window && ((document = window.document) && (body = document.body)))
+				next = checkByRole(body);
+				next.url = window.location.href;
+				result[result.length] = next;
+				frames = window.frames;
+				next.framesTotal = frames.length;
+				for(i=0; i<frames.length; i++)
 				{
-					next = checkByRole(body);
-					next.url = window.location.href;
-					result[result.length] = next;
-					frames = window.frames;
-					for(i=0; i<frames.length; i++)
+					try
 					{
-						try
+						frameSummary = $this.check(frames[i]);
+						if(frameSummary && frameSummary.length)
 						{
-							frameSummary = $this.check(frames[i]);
-							if(frameSummary && frameSummary.length)
-							{
-								result = result.concat(frameSummary);
-							}
+							result = result.concat(frameSummary);
 						}
-						catch(ex)
-						{
-							console.info("Error checking frame");
-						}
+						next.framesChecked++;
+					}
+					catch(ex)
+					{
+						console.warn("Can not access frame, it is probably from a different origin");
 					}
 				}
-			}
-			catch(ex)
-			{
-				console.warn("Can not access frame, it is probably from a different origin");
 			}
 			return result;
 		};
@@ -259,17 +291,24 @@
 			var supported = $this.getSupported(role),
 				result = new Summary(), i, next, attributes;
 			attributes = element.attributes;
-			for(i=attributes.length-1; i>=0; i--)
+			if(supported)//it is possible we have an unsupported role AND aria attributes - hence null check on supported
 			{
-				next = attributes[i].name;
-				if(ARIA_ATTR_RE.test(next))
+				for(i=attributes.length-1; i>=0; i--)
 				{
-					//result.addAttrs(next);
-					if(!(next in supported))
+					next = attributes[i].name;
+					if(ARIA_ATTR_RE.test(next))
 					{
-						result.addWarnings(new Message("unsupported attribute: " + next, role, element));
+						//result.addAttrs(next);
+						if(!(next in supported))
+						{
+							result.addWarnings(new Message("unsupported attribute: " + next, role, element));
+						}
 					}
 				}
+			}
+			else//it's not a real aria role
+			{
+				result.addWarnings(new Message("role does not exist in ARIA", role, element));
 			}
 			return result;
 		}
@@ -301,7 +340,7 @@
 		 */
 		function checkContainsRequiredElements(element, role)
 		{
-			var i, next, required = $this.getMustContain(role),
+			var i, required = $this.getMustContain(role),
 				result = new Summary(),
 				passed = !required.length;
 			if(!passed)
