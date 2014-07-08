@@ -5,7 +5,31 @@
  */
 (function(scope){
 
+	var options = {
+		experimental: false
+	};
+
+	scope.chrome.storage.sync.get(options, updateOptions);
 	scope.chrome.runtime.onMessage.addListener(messageEvent);
+	scope.chrome.storage.onChanged.addListener(storageChangedEvent);
+
+	function updateOptions(obj)
+	{
+		options = obj;
+	}
+
+	function storageChangedEvent(changes, namespace) {
+		var key, storageChange;
+		for(key in changes)
+		{
+			storageChange = changes[key];
+			if(namespace === "sync")
+			{
+				options[key] = storageChange.newValue;
+				console.log("Changed option: ", key, options[key]);
+			}
+		}
+	}
 
 	/*
 	 * Receive messages from background.js
@@ -21,6 +45,7 @@
 			}
 		}
 	}
+
 	/**
 	 * Validate ARIA on this page.
 	 * @param {string} rdf The WAI-ARIA Taxonomy to use.
@@ -36,7 +61,7 @@
 				rdfDom = parser.parseFromString(rdf, "text/xml");
 				scope.ARIA.setRdf(rdfDom);
 			}
-			summary = scope.ARIA.check(window);
+			summary = scope.ARIA.check(window, options);
 			if(summary && summary.length)
 			{
 				summary.forEach(function(next){

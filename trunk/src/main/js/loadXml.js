@@ -3,7 +3,7 @@
  */
 function loadXml(url)
 {
-	var result, xhr;
+	var xhr;
 	if(window.XMLHttpRequest)
 	{
 		xhr = new XMLHttpRequest();

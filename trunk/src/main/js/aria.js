@@ -10,8 +10,10 @@ function ARIA(config)
 {
 	var $this = this,
 		ANCHOR_ONLY_RE = /^.*?#/,
+		HTML_CONCEPT_RE = /^.*?#edef-/,
 		xmlDoc,
 		baseRole,//at time of writing (and probably forever) this will be roleType
+		conceptCache = [{}, {}],
 		instances = {},
 		constructors = {};
 
@@ -22,11 +24,12 @@ function ARIA(config)
 	$this.getMustContain = getScopeFactory("role:mustContain");
 	$this.getScopedTo = getScopedFactory("role:scope");
 	$this.getScopedBy = getScopedFactory("role:mustContain");
+	$this.getConcept = getConcept;
 	
 	$this.setRdf = function(rdf){
 		xmlDoc = rdf;
 	};
-	$this.getRdf = function(rdf){
+	$this.getRdf = function(){
 		return xmlDoc;
 	};
 	/**
@@ -118,6 +121,40 @@ function ARIA(config)
 		};
 	}
 
+	/**
+	 * Gets the related HTML concept.
+	 * There are derived from "role:baseConcept" and "rdfs:seeAlso", though the latter can be disabled
+	 * @param {string} role An ARIA role
+	 * @param {boolean} [conceptOnly] If true will not include results from "rdfs:seeAlso"
+	 * @return {String[]} An array of strings representing related HTML concepts
+	 */
+	function getConcept(role, conceptOnly)
+	{
+		var result, expression, cache = conceptCache[(conceptOnly? 1 : 0)];
+		if(role)
+		{
+			//(//owl:Class[@rdf:ID="role"]/role:baseConcept|//owl:Class[@rdf:ID="role"]/rdfs:seeAlso)/@rdf:resource[contains(., 'html')]
+
+			result = cache[role];
+			if(!result)
+			{
+				initialise();
+				expression = '(//owl:Class[@rdf:ID="' + role + '"]/role:baseConcept';
+				if(!conceptOnly)
+				{
+					expression += '|//owl:Class[@rdf:ID="' + role + '"]/rdfs:seeAlso';
+				}
+				expression += ")/@rdf:resource[contains(., 'html')]";
+				result = cache[role] = cleanHtmlRefs(config.query(expression, false, xmlDoc));
+			}
+		}
+		else
+		{
+			throw new TypeError("role can not be null");
+		}
+		return result;
+	}
+
 	/*
 	 * Creates methods for getScope and getMustContain.
 	 * @param {string} nodeName Either role:mustContain or role:scope
@@ -205,8 +242,23 @@ function ARIA(config)
 	
 	function cleanRoles(roles)
 	{
-		return roles.map(function(next){
-				return next.nodeValue.replace(ANCHOR_ONLY_RE, "");
+		return clean(roles, ANCHOR_ONLY_RE);
+	}
+
+	function cleanHtmlRefs(refs)
+	{
+		return clean(refs, HTML_CONCEPT_RE);
+	}
+
+	/**
+	 * @param {Attribute[]} attributes An array of attribute nodes
+	 * @param {RegExp} re The regular expression to be used in a relace to clean the attribute value.
+	 * @returns {string[]} The cleaned attribute values.
+	 */
+	function clean(attributes, re)
+	{
+		return attributes.map(function(next){
+				return next.nodeValue.replace(re, "");
 			});
 	}
 	

@@ -22,6 +22,6 @@
 		</xsl:copy>
 	</xsl:template>
 	
-	<xsl:template match="role:baseConcept|role:nameFrom|rdfs:seeAlso|rdfs:comment"/>
+	<xsl:template match="role:nameFrom|rdfs:comment"/>
 	
 </xsl:stylesheet>
