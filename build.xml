@@ -102,9 +102,17 @@ scope = null;
 		</jscomp>
 	</target>
 
-	<target name="test" depends="compile" description="Build tests for the project">
+	<target name="test" depends="dist" description="Build tests for the project">
 		<mkdir dir="${test.build.dir}"/>
-		<copy file="${src.dir}/test/aria-test.html" todir="${test.build.dir}">
+		<unzip src="${basedir}/libs/jasmine/jasmine-standalone-2.0.0.zip" dest="${test.build.dir}">
+			<patternset>
+				<include name="lib/"/>
+			</patternset>
+		</unzip>
+		<copy todir="${test.build.dir}">
+			<fileset dir="${src.dir}/test">
+				<include name="**/*"/>
+			</fileset>
 			<filterchain>
 				<expandproperties/>
 			</filterchain>
