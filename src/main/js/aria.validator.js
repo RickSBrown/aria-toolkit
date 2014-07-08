@@ -10,6 +10,15 @@
  */
 (function(){
 
+	Message.prototype.toString = function(){
+		return messageToString(this);
+	};
+
+	function messageToString(message)
+	{
+		return ["<li><a target='_blank' href='http://www.w3.org/TR/wai-aria/roles#", message.role, "'>", message.role, "</a> ", message.msg, "</li>"].join("");
+	}
+
 	/**
 	 *
 	 * @constructor
@@ -46,8 +55,9 @@
 	Summary.prototype.toHtml = function(){
 		var roles = this.getRoles(),
 			dupCount = 0, next, i,
+			failures = this.getFailures(),
 			warnings = this.getWarnings(),
-			passed = !warnings.length,
+			passed = !failures.length,
 			cssClass = (passed? "pass": "fail"),
 			result = ["<div class='validatorResults "];
 		result[result.length] = cssClass;
@@ -80,40 +90,21 @@
 				return ["<li>", role, "</li>"].join("");
 			}));
 			result[result.length] = "</ul>";
-			if(warnings.length)
+			if(failures.length)
 			{
-				warnings = warnings.map(function(message){
-					return ["<li><a target='_blank' href='http://www.w3.org/TR/wai-aria/roles#", message.role, "'>", message.role, "</a> ", message.msg, "</li>"].join("");
-				});
-				warnings.sort();
-				result[result.length] = "<h2>Warnings</h2><ul class='fail'>";
-				for(i=0; i<warnings.length; i++)
-				{
-					next = warnings[i];
-					if(result[result.length - 1] === next)
-					{
-						dupCount++;
-					}
-					else
-					{
-						if(dupCount)
-						{
-							result[result.length - 1] = result[result.length - 1].replace("</li>", " (repeated " + dupCount + " more times)</li>");
-							dupCount = 0;
-						}
-						result[result.length] = next;
-					}
-				}
-				if(dupCount)
-				{
-					result[result.length - 1] = result[result.length - 1].replace("</li>", " (repeated " + dupCount + " more times)</li>");
-					dupCount = 0;
-				}
+				result[result.length] = "<h2>Problems</h2><ul class='fail'>";
+				result[result.length] = messagesToList(failures);
 				result[result.length] = "</ul>";
 			}
 			else
 			{
 				result[result.length] = "<p>No issues detected - well done :)</p>";
+			}
+			if(warnings.length)
+			{
+				result[result.length] = "<h2>Potential Issues</h2><ul class='warn'>";
+				result[result.length] = messagesToList(warnings);
+				result[result.length] = "</ul>";
 			}
 		}
 		else
@@ -125,24 +116,96 @@
 	};
 
 	/**
-	 * @param {Message|Message[]} message The message/s to add to the warnings.
+	 * Messages to <li> items.
+	 * @param {Message[]} messages
+	 * @returns {string} The <li> elements of an HTML list
 	 */
-	Summary.prototype.addWarnings = function(message){
+	function messagesToList(messages)
+	{
+		var result = [],
+			dupCount = 0, i, next,
+			strings = messages.map(messageToString);
+		strings.sort();
+		for(i=0; i<strings.length; i++)
+		{
+			next = strings[i];
+			if(result[result.length - 1] === next)
+			{
+				dupCount++;
+			}
+			else
+			{
+				if(dupCount)
+				{
+					result[result.length - 1] = result[result.length - 1].replace("</li>", " (repeated " + dupCount + " more times)</li>");
+					dupCount = 0;
+				}
+				result[result.length] = next;
+			}
+		}
+		if(dupCount)
+		{
+			result[result.length - 1] = result[result.length - 1].replace("</li>", " (repeated " + dupCount + " more times)</li>");
+			dupCount = 0;
+		}
+		return result.join("");
+	}
+
+	/**
+	 * @param {Summary} instance The instance to hold the messages.
+	 * @param {Message|Message[]} message The message/s to add.
+	 * @param {number} [severity] By default will be 0 ('failure' message).
+	 */
+	function addMessages(instance, message, severity){
+		var idx = (severity || 0),
+			msgs = instance.messages[idx];
 		if(message)
 		{
 			if(message instanceof Message)
 			{
-				this.warnings[this.warnings.length] = message;
+				if(msgs)
+				{
+					msgs[msgs.length] = message;
+				}
+				else
+				{
+					instance.messages[idx] = [message];
+				}
 			}
-			else if(message.length)
+			else if(message.length)//weak test for array
 			{
-				this.warnings = this.warnings.concat(message);
+				if(msgs)
+				{
+					instance.messages[idx] = msgs.concat(message);
+				}
+				else
+				{
+					instance.messages[idx] = message;
+				}
 			}
 		}
 	};
 
+	function getMessages(instance, severity){
+		var idx = (severity || 0),
+			result = instance.messages[idx] || (instance.messages[idx] = []);
+		return result;//return a copy instead to be safe?
+	};
+
+	Summary.prototype.getFailures = function(){
+		return getMessages(this, 0);
+	};
+
+	Summary.prototype.addFailures = function(message){
+		return addMessages(this, message, 0);
+	};
+
 	Summary.prototype.getWarnings = function(){
-		return this.warnings;//return a copy instead to be safe?
+		return getMessages(this, 1);
+	};
+
+	Summary.prototype.addWarnings = function(message){
+		return addMessages(this, message, 1);
 	};
 
 	Summary.prototype.addRoles = function(role){
@@ -166,11 +229,12 @@
 	 * @param summary the instance to merge from.
 	 */
 	Summary.prototype.merge = function(summary){
-		var i, next, getSet = [/*"Attrs", */"Roles", "Warnings"];
+		var i, next, data, getSet = [/*"Attrs", */{suffix: "Roles"}, {suffix:"Failures"}, {suffix: "Warnings"}];
 		for(i=0; i<getSet.length; i++)
 		{
-			next = getSet[i];
-			this["add"+ next](summary["get" + next]());
+			next = getSet[i].suffix;
+			data = summary["get" + next]();
+			this["add"+ next](data);
 		}
 		this.framesTotal += summary.framesTotal;
 		this.framesChecked += summary.framesChecked;
@@ -186,7 +250,7 @@
 		this.framesChecked = 0;
 		this.name = "";
 		this.url = null;
-		this.warnings = [];
+		this.messages = [];//multidimensional array - zero will be failure messages, one will be warnings etc
 		this.roles = {};
 		//this.attrs = {};
 	}
@@ -198,15 +262,35 @@
 	function AriaValidator()
 	{
 		var $this = this,
-			ARIA_ATTR_RE = /^aria\-/;
+			roleChecks = {
+				warns:[
+					checkFirstRule,
+					checkSecondRule
+				],
+				tests :[checkInRequiredScope,
+					checkContainsRequiredElements,
+					checkRequiredAttributes,
+					checkSupportsAllAttributes]
+			},
+			ARIA_ATTR_RE = /^aria\-/,
+			HIGHLY_SEMANTIC_HTML = {
+				H1:"H1",
+				H2:"H2",
+				H3:"H3",
+				H4:"H4",
+				H5:"H5",
+				H6:"H6"
+			};
 
 		/**
 		 * Call ARIA.check to check the correctness of any ARIA roles and attributes used in this DOM.
 		 * @param {Window} window The browser window.
+		 * @param {Object} [options] Configuration options.
+		 * options.experimental - if true run experimental tests
 		 * @return {Summary[]} A summary of ARIA usage within this document and any frames it contains.
 		 * @example ARIA.check(document.body);
 		 */
-		$this.check = function(window)
+		$this.check = function(window, options)
 		{
 			var result = [], document, body, frames, i, next, frameSummary;
 			if(window && ((document = window.document) && (body = document.body)))
@@ -220,7 +304,7 @@
 				{
 					try
 					{
-						frameSummary = $this.check(frames[i]);
+						frameSummary = $this.check(frames[i], options);
 						if(frameSummary && frameSummary.length)
 						{
 							result = result.concat(frameSummary);
@@ -236,21 +320,22 @@
 			return result;
 		};
 
-		function checkByRole(element)
+		function checkByRole(element, options)
 		{
-			var result = new Summary(), role, next, i, messages, elements = element.querySelectorAll("[role]"), j, nextJ,
-				tests = [checkInRequiredScope,
-					checkContainsRequiredElements,
-					checkRequiredAttributes,
-					checkSupportsAllAttributes];
+			var result = new Summary(), role, next, i, elements = element.querySelectorAll("[role]"),
+				lenJ, j, nextJ, tests = roleChecks.tests;
+			if(options && options.experimental)
+			{
+				tests = tests.concat(roleChecks.warns);
+			}
 			for(i=elements.length-1; i>=0; i--)
 			{
 				next = elements[i];
 				role = getRole(next);
-				if(role)
+				if(role)//todo check if hasAttribute role but value is empty
 				{
 					result.addRoles(role);
-					for(j=0; j<tests.length; j++)
+					for(j=0, lenJ=tests.length; j<lenJ; j++)
 					{
 						nextJ = tests[j](next, role);
 						if(nextJ)
@@ -273,14 +358,52 @@
 			return result;
 		}
 
-		function checkRequiredAttributes(element, role, summary)
+		/*
+		 * This is really difficult to test programatically - allow as optional check
+		 */
+		function checkFirstRule(element, role)
+		{
+			//http://www.w3.org/TR/aria-in-html/#first
+			var result = new Summary(),
+				concepts = $this.getConcept(role, true),
+				tagName = element.tagName;
+			if(tagName && concepts && concepts.length)
+			{
+				tagName = tagName.toUpperCase();
+				if(concepts.indexOf(tagName))
+				{
+					result.addWarnings(new Message(" on " + tagName + " possibly violates <a target='_blank' href='http://www.w3.org/TR/aria-in-html/#rule1'>1st rule</a>, consider native: " + concepts.join(), role, element));
+				}
+			};
+			return result;
+		}
+
+		/*
+		 * This is really difficult to test programatically - allow as optional check
+		 */
+		function checkSecondRule(element, role)
+		{
+			//http://www.w3.org/TR/aria-in-html/#second
+			var result = new Summary(), tagName = element.tagName;
+			if(tagName)
+			{
+				tagName = tagName.toUpperCase();
+				if(HIGHLY_SEMANTIC_HTML.hasOwnProperty(tagName))
+				{
+					result.addWarnings(new Message(" on " + tagName + " possibly violates <a target='_blank' href='http://www.w3.org/TR/aria-in-html/#second'>2nd rule</a>", role, element));
+				}
+			}
+			return result;
+		}
+
+		function checkRequiredAttributes(element, role)
 		{
 			var result = new Summary(), prop, supported = $this.getSupported(role);
 			for(prop in supported)
 			{
 				if(supported[prop] === $this.REQUIRED && !element.hasAttribute(prop))
 				{
-					result.addWarnings(new Message("missing required attribute: " + prop, role, element));
+					result.addFailures(new Message("missing required attribute: " + prop, role, element));
 				}
 			}
 			return result;
@@ -301,14 +424,14 @@
 						//result.addAttrs(next);
 						if(!(next in supported))
 						{
-							result.addWarnings(new Message("unsupported attribute: " + next, role, element));
+							result.addFailures(new Message("unsupported attribute: " + next, role, element));
 						}
 					}
 				}
 			}
 			else//it's not a real aria role
 			{
-				result.addWarnings(new Message("role does not exist in ARIA", role, element));
+				result.addFailures(new Message("role does not exist in ARIA", role, element));
 			}
 			return result;
 		}
@@ -330,7 +453,7 @@
 			}
 			if(!passed)
 			{
-				result.addWarnings(new Message("not in required scope: " + required.join(" | "), role, element));
+				result.addFailures(new Message("not in required scope: " + required.join(" | "), role, element));
 			}
 			return result;
 		}
@@ -356,7 +479,7 @@
 			}
 			if(!passed)
 			{
-				result.addWarnings(new Message("does not contain required roles: " + required.join(" | "), role, element));
+				result.addFailures(new Message("does not contain required roles: " + required.join(" | "), role, element));
 			}
 			return result;
 		}
