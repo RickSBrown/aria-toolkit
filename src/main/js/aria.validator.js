@@ -96,10 +96,6 @@
 				result[result.length] = messagesToList(failures);
 				result[result.length] = "</ul>";
 			}
-			else
-			{
-				result[result.length] = "<p>No issues detected - well done :)</p>";
-			}
 			if(warnings.length)
 			{
 				result[result.length] = "<h2>Potential Issues</h2><ul class='warn'>";
