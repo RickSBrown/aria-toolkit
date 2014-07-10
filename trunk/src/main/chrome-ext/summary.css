@@ -53,12 +53,12 @@ body .result
 body .fail .result
 {
 	color: red;
-	background-image: url('icon/48/Erreur.png');
+	background-image: url('icon/48/Boton_mal.png');
 }
 body .pass .result
 {
 	color: green;
-	background-image: url('icon/48/Valide.png');
+	background-image: url('icon/48/Boton_correcto.png');
 }
 
 ul
@@ -71,7 +71,15 @@ ul.fail li
 {
 	margin-bottom: .2em;
 	padding-left: 1.5em;
-	background-image: url('icon/16/Erreur.png');
+	background-image: url('icon/16/Boton_mal.png');
+	background-repeat: no-repeat;
+}
+
+ul.warn li
+{
+	margin-bottom: .2em;
+	padding-left: 1.5em;
+	background-image: url('icon/16/Boton_advertencia.png');
 	background-repeat: no-repeat;
 }
 
