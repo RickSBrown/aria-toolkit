@@ -10,24 +10,76 @@
  */
 (function(){
 
+	function buildSpecLink(name, attr)
+	{
+
+		var html;
+		if(attr)
+		{
+			html = '<a target="_blank" href="http://www.w3.org/TR/wai-aria/states_and_properties#aria-owns#{name}">{name}</a>';
+		}
+		else
+		{
+			html = '<a target="_blank" href="http://www.w3.org/TR/wai-aria/roles#{name}">{name}</a>';
+		}
+		if(name)//TODO validate that it's a real target?
+		{
+			html = html.replace(/\{name\}/g, name);
+		}
+		return html;
+	}
+
 	Message.prototype.toString = function(){
-		return messageToString(this);
+		var source = elementToSource(this.element);
+		return ["<details><summary>", buildSpecLink(this.role, this.isAttribute), " ", this.msg, "</summary><p>",
+			source, "</p></details>"].join("");
 	};
 
-	function messageToString(message)
+	function elementToSource(element)
 	{
-		return ["<li><a target='_blank' href='http://www.w3.org/TR/wai-aria/roles#", message.role, "'>", message.role, "</a> ", message.msg, "</li>"].join("");
+		var result, i;
+		if(element)
+		{
+			if(element.nodeType === Node.ELEMENT_NODE)
+			{
+				result = element.outerHTML;
+				result = result.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+				result = "<pre>" + result + "</pre>";
+			}
+			else if(element.length)
+			{
+				for(i=0; i<element.length; i++)
+				{
+					result += elementToSource(element[i]);
+				}
+			}
+			else
+			{
+				result = element.toString();
+			}
+		}
+		else
+		{
+			result = "";
+		}
+		return result;
+	}
+
+	function messageToListItem(message)
+	{
+		return ["<li>", message.toString(), "</li>"].join("");
 	}
 
 	/**
 	 *
 	 * @constructor
 	 */
-	function Message(msg, role, element)
+	function Message(msg, name, element)
 	{
 		this.msg = msg;
-		this.role = role;
+		this.role = name;
 		this.element = element;
+		this.isAttribute = false;
 	}
 
 	Summary.addUnique = function(instance, name, value){
@@ -54,7 +106,6 @@
 
 	Summary.prototype.toHtml = function(){
 		var roles = this.getRoles(),
-			dupCount = 0, next, i,
 			failures = this.getFailures(),
 			warnings = this.getWarnings(),
 			passed = !failures.length,
@@ -120,7 +171,7 @@
 	{
 		var result = [],
 			dupCount = 0, i, next,
-			strings = messages.map(messageToString);
+			strings = messages.map(messageToListItem);
 		strings.sort();
 		for(i=0; i<strings.length; i++)
 		{
@@ -259,14 +310,15 @@
 	{
 		var $this = this,
 			roleChecks = {
-				warns:[
+				experiments:[
 					checkFirstRule,
 					checkSecondRule
 				],
 				tests :[checkInRequiredScope,
 					checkContainsRequiredElements,
 					checkRequiredAttributes,
-					checkSupportsAllAttributes]
+					checkSupportsAllAttributes,
+					checkAriaOwns]
 			},
 			ARIA_ATTR_RE = /^aria\-/,
 			HIGHLY_SEMANTIC_HTML = {
@@ -277,6 +329,9 @@
 				H5:"H5",
 				H6:"H6"
 			};
+
+		/* TEST HOOKS - YEP, MAKING IT PUBLIC JUST FOR TESTING */
+		$this._checkAriaOwns = checkAriaOwns;
 
 		/**
 		 * Call ARIA.check to check the correctness of any ARIA roles and attributes used in this DOM.
@@ -322,7 +377,7 @@
 				lenJ, j, nextJ, tests = roleChecks.tests;
 			if(options && options.experimental)
 			{
-				tests = tests.concat(roleChecks.warns);
+				tests = tests.concat(roleChecks.experiments);
 			}
 			for(i=elements.length-1; i>=0; i--)
 			{
@@ -392,6 +447,65 @@
 			return result;
 		}
 
+		/*
+		 * NON-RDF based but solid.
+		 * TODO not really a role check - create a class of attribute checks
+		 * Check the implementation of the "aria-owns" attribute on this element
+		 * - SHOULD not contain the element it owns
+		 * - MUST not "aria-own" an id that is "aria-owned" somewhere else.
+		 */
+		function checkAriaOwns(element, role)
+		{
+			var attr="aria-owns", result = new Summary(), i, len, msg, next, nextElement, j, lenJ, nextJ, owners, owned = element.getAttribute(attr);
+			if(owned)
+			{
+				owned = splitAriaIdList(owned);//don't use "getOwned" because we care about duplicate listings even if they are not found in the DOM
+				for(i=0, len=owned.length; i<len; i++)
+				{
+					next = owned[i];
+					owners = $this.getOwner({
+						id:next,
+						ownerDocument: element.ownerDocument
+					}, true);
+					if(owners)
+					{
+						lenJ=owners.length;
+						nextElement = document.getElementById(next);
+						if(nextElement)
+						{
+							for(j=0; j<lenJ; j++)
+							{
+								nextJ = owners[j];
+								if(nextJ.compareDocumentPosition(nextElement) & Node.DOCUMENT_POSITION_CONTAINED_BY)
+								{
+									msg = new Message(" should not be used if the relationship is represented in the DOM: ", attr, element);
+									msg.isAttribute = true;
+									result.addWarnings(msg);
+								}
+							}
+						}
+						else
+						{
+							msg = new Message(" references an element that is not present in the DOM: ", attr, next);
+							msg.isAttribute = true;
+							result.addWarnings(msg);
+						}
+						if(lenJ > 1)
+						{
+							msg = new Message(" IDREF must not be owned by more than one element: " + next, attr, owners);
+							msg.isAttribute = true;
+							result.addFailures(msg);
+						}
+					}
+					else
+					{
+						console.log("This can not possibly happen");
+					}
+				}
+			}
+			return result;
+		}
+
 		function checkRequiredAttributes(element, role)
 		{
 			var result = new Summary(), prop, supported = $this.getSupported(role);
@@ -434,7 +548,7 @@
 
 		function checkInRequiredScope(element, role)
 		{
-			var next, required = $this.getScope(role), result = new Summary(), passed = !required.length;
+			var next, required = $this.getScope(role), result = new Summary(), passed = !required.length, owner;
 			if(!passed)
 			{
 				while((element = element.parentNode))
@@ -444,6 +558,19 @@
 					{
 						passed = true;
 						break;
+					}
+				}
+			}
+			if(!passed)
+			{
+				owner = $this.getOwner(element);
+				if(owner)
+				{
+					next = getRole(owner);
+					if(next && required.indexOf(next) >= 0)
+					{
+						//console.log("passed by being explicitly owned");
+						passed = true;
 					}
 				}
 			}
@@ -459,17 +586,38 @@
 		 */
 		function checkContainsRequiredElements(element, role)
 		{
-			var i, required = $this.getMustContain(role),
-				result = new Summary(),
+			var i, j, required = $this.getMustContain(role),
+				result = new Summary(), owned, next,
 				passed = !required.length;
 			if(!passed)
 			{
 				for(i=required.length-1; i>=0; i--)
 				{
-					if(element.querySelector("[role='" + required[i] + "']"))
+					next = required[i];
+					if(element.querySelector("[role='" + next + "']"))
 					{
 						passed = true;
 						break;
+					}
+				}
+			}
+			if(!passed)
+			{
+				owned = $this.getOwned(element);
+				if(owned)
+				{
+					for(i=owned.length-1; i>=0; i--)
+					{
+						next = owned[i];
+						for(j=required.length-1; j>=0; j--)
+						{
+							if(getRole(next) === required[j])
+							{
+								//console.log("passed by explicit ownership");
+								passed = true;
+								break;
+							}
+						}
 					}
 				}
 			}
@@ -479,6 +627,76 @@
 			}
 			return result;
 		}
+
+		/**
+		* Gets the element that "aria-owns" this element
+		* @param {Element} element a DOM element
+		* @param {boolean} showAll If true will return multiple owners, if found, even though this is invalid (result will be nodeList).
+		* @return {Element|undefined}
+		* 		the element which owns the passed in element (if any) or undefined if no owner found
+		*/
+		$this.getOwner = function(element, showAll)
+		{
+			var id = element.id, ownerQuery, result, document = element.ownerDocument;
+			if(id)
+			{
+				ownerQuery = "[aria-owns~=" + id  + "]";
+				result = document.querySelectorAll(ownerQuery);
+				if(!showAll)
+				{
+					if(result)
+					{
+						result = result[0];
+						if(result.length > 1)
+						{
+							console.warn("Found more than one element which 'aria-owns' id ", id);
+						}
+					}
+				}
+			}
+			return result;
+		};
+		/**
+		 * Gets elements that are indirectly owned by a DOM element with "aria-owns".
+		 * @param {Element} element a DOM element.
+		 * @return {array} An array of elements owned by the element.
+		 */
+		$this.getOwned = function(element)
+		{
+			var ids = element.getAttribute("aria-owns"), result = [], i, len, owned, document = element.ownerDocument;
+			if(ids)
+			{
+				ids = splitAriaIdList(ids);
+				for(i = 0, len = ids.length; i < len; ++i)
+				{
+					owned = document.getElementById(ids[i]);
+					if(owned)
+					{
+						result.push(owned);
+					}
+					else
+					{
+						console.warn("can not element specified in 'aria-owns' with id ", ids[i]);
+					}
+				}
+			}
+			return result;
+		};
+
+		function splitAriaIdList(val)
+		{
+			var result;
+			if(val)
+			{
+				result = val.split(/\s+/);
+			}
+			else
+			{
+				result = [];
+			}
+			return result;
+		}
+
 	}
 
 })();
