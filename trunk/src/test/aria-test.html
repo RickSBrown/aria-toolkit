@@ -6,10 +6,10 @@
 		<script src="js/aria.validator-${build.version}.js"></script>
 		<script>
 			var globalStates = ["aria-atomic", "aria-busy", "aria-controls", "aria-describedby",
-			                    "aria-disabled", "aria-dropeffect", "aria-flowto", "aria-grabbed",
-			                    "aria-haspopup", "aria-hidden", "aria-invalid", "aria-label",
-			                    "aria-labelledby", "aria-live", "aria-owns", "aria-relevant"];
-			
+								"aria-disabled", "aria-dropeffect", "aria-flowto", "aria-grabbed",
+								"aria-haspopup", "aria-hidden", "aria-invalid", "aria-label",
+								"aria-labelledby", "aria-live", "aria-owns", "aria-relevant"];
+
 			//todo replace with real unit testing framework
 			function assertEquals(a, b)
 			{
@@ -19,49 +19,49 @@
 					throw new Error("assertion error " + arguments.callee.caller.name);
 				}
 			}
-			
+
 			function testGetScope()
 			{
 				var expected = ["list"],
 					result = ARIA.getScope("listitem");
 					assertEquals(expected.join(), result.join());
 			}
-			
+
 			function testGetScopeManyMatches()
 			{
 				var expected = ["grid", "rowgroup", "treegrid"],
 					result = ARIA.getScope("row");
 					assertEquals(expected.sort().join(), result.sort().join());
 			}
-			
+
 			function testGetScopeNoMatches()
 			{
 				var expected = [],
 					result = ARIA.getScope("listbox");
 					assertEquals(expected.join(), result.join());
 			}
-			
+
 			function testGetMustContain()
 			{
 				var expected = ["option"],
 					result = ARIA.getMustContain("listbox");
 					assertEquals(expected.join(), result.join());
 			}
-			
+
 			function testGetMustContainManyMatches()
 			{
 				var expected = ["listbox", "textbox"],
 					result = ARIA.getMustContain("combobox");
 					assertEquals(expected.sort().join(), result.sort().join());
 			}
-			
+
 			function testGetMustContainNoMatches()
 			{
 				var expected = [],
 					result = ARIA.getMustContain("option");
 					assertEquals(expected.join(), result.join());
 			}
-			
+
 			function testGetSupported()
 			{
 				var result = ARIA.getSupported("checkbox");
@@ -71,7 +71,7 @@
 				assertEquals(ARIA.REQUIRED, result["aria-checked"]);
 				assertEquals("undefined", typeof result["aria-selected"]);
 			}
-			
+
 			function testGetSupportedNoRole()
 			{
 				var result = ARIA.getSupported("");
@@ -80,28 +80,28 @@
 				});
 				assertEquals("undefined", typeof result["aria-checked"]);
 			}
-			
+
 			function testIsValid()
 			{
 				var result = ARIA.isValid(document);
 				assertEquals(false, result);
 				console.log("passed");
 			}
-			
+
 			function testGetScopedTo()
 			{
 				var expected = ["menuitem", "menuitemcheckbox", "menuitemradio"],
 					result = ARIA.getScopedTo("menubar");
 					assertEquals(expected.join(), result.join());
 			}
-			
+
 			function testGetScopedBy()
 			{
 				var expected = ["listbox"],
 					result = ARIA.getScopedBy("option");
 					assertEquals(expected.join(), result.join());
 			}
-			
+
 			testGetScope();
 			console.log("passed");
 			testGetScopeManyMatches();
@@ -128,7 +128,7 @@
 		<!-- HTML based strongly on examples given here: http://www.w3.org/TR/wai-aria-practices/ -->
 		<p>Errors will be logged in the console!</p>
 		<p>If you are running this in IE make sure it's IE9 or later.</p>
-		<div role="menubar" aria-checked="true"><!-- Unsupported state -->		
+		<div role="menubar" aria-checked="true"><!-- Unsupported state -->
 		  <!--
 		    File menu: File menuitem has an aria-haspopup attribute set to 'true'.
 		    That popup div follows immediately below.
@@ -142,7 +142,7 @@
 		  </div>
 		  <!--
 		    View menu:
-		  -->  
+		  -->
 		  <div role="menuitem" aria-haspopup="true" id="viewMenu">View</div>
 		  <div role="menu" aria-labelledby="viewMenu">
 		    <div role="menuitem">Normal</div>
