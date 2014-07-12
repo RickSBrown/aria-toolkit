@@ -122,6 +122,10 @@ scope = null;
 				<expandproperties/>
 			</filterchain>
 		</copy>
+		<echo></echo>
+		<echo>********</echo>
+		<echo>Load 'SpecRunner.html' in your browser to run the tests.</echo>
+		<echo>********</echo>
 	</target>
 
 	<target name="dist" depends="build, debug, compile" description="Builds the tarball for distribution">

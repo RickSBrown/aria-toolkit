@@ -332,6 +332,12 @@
 
 		/* TEST HOOKS - YEP, MAKING IT PUBLIC JUST FOR TESTING */
 		$this._checkAriaOwns = checkAriaOwns;
+		$this._checkContainsRequiredElements = checkContainsRequiredElements;
+		$this._checkInRequiredScope = checkInRequiredScope;
+		$this._checkSupportsAllAttributes = checkSupportsAllAttributes;
+		$this._checkRequiredAttributes = checkRequiredAttributes;
+		$this._checkFirstRule = checkFirstRule;
+		$this._checkSecondRule = checkSecondRule;
 
 		/**
 		 * Call ARIA.check to check the correctness of any ARIA roles and attributes used in this DOM.
@@ -421,7 +427,7 @@
 			if(tagName && concepts && concepts.length)
 			{
 				tagName = tagName.toUpperCase();
-				if(concepts.indexOf(tagName))
+				if(concepts.indexOf(tagName) >= 0)
 				{
 					result.addWarnings(new Message(" on " + tagName + " possibly violates <a target='_blank' href='http://www.w3.org/TR/aria-in-html/#rule1'>1st rule</a>, consider native: " + concepts.join(), role, element));
 				}
@@ -541,19 +547,20 @@
 			}
 			else//it's not a real aria role
 			{
-				result.addFailures(new Message("role does not exist in ARIA", role, element));
+				result.addFailures(new Message("role does not exist in ARIA", role, element));//TODO this is not the right place for this test
 			}
 			return result;
 		}
 
 		function checkInRequiredScope(element, role)
 		{
-			var next, required = $this.getScope(role), result = new Summary(), passed = !required.length, owner;
+			var next, required = $this.getScope(role), result = new Summary(), passed = !required.length, owner, parent;
 			if(!passed)
 			{
-				while((element = element.parentNode))
+				parent = element;
+				while((parent = parent.parentNode))
 				{
-					next = getRole(element);
+					next = getRole(parent);
 					if(next && required.indexOf(next) >= 0)
 					{
 						passed = true;
@@ -583,6 +590,7 @@
 
 		/*
 		 * TODO needs to be aware of descendant elements with roles that create boundaries?
+		 * I think it does not need to contain ALL the roles.
 		 */
 		function checkContainsRequiredElements(element, role)
 		{
@@ -646,11 +654,11 @@
 				{
 					if(result)
 					{
-						result = result[0];
 						if(result.length > 1)
 						{
 							console.warn("Found more than one element which 'aria-owns' id ", id);
 						}
+						result = result[0];
 					}
 				}
 			}

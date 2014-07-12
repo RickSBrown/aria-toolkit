@@ -26,14 +26,19 @@
 
 <body>
 	<div id="testDom">
-		<div role="menubar" aria-checked="true"><!-- Unsupported state -->
+		<h1 id="badHeading" role="button">heading button</h1><!-- Breaks the "Second Rule of ARIA" -->
+		<select>
+			<option id="badOpt" role="option">Bad</option><!-- Breaks the "First Rule of ARIA" -->
+			<option>Good</option>
+		</select>
+		<div id="menubar1" role="menubar" aria-checked="true"><!-- Unsupported state -->
 			<!--
 				File menu: File menuitem has an aria-haspopup attribute set to 'true'.
 				That popup div follows immediately below.
 			-->
 			<div role="menuitem" aria-haspopup="true" id="fileMenu">File</div><!-- Do not put 'aria-owns' on this element -->
 			<div role="menu" aria-labelledby="fileMenu">
-				<div role="menuitem">Open</div>
+				<div id="menuitem1" role="menuitem">Open</div>
 				<div role="menuitem">Save</div>
 				<div role="menuitem">Save as ...</div>
 			</div>
@@ -59,9 +64,33 @@
 				</div>
 			</div>
 		</div>
+		<h3 id="rg1_label">Lunch Options</h3>
+		<ul class="radiogroup" id="rg1" role="radiogroup" aria-labelledby="rg1_label">
+			<li id="r1"  tabindex="-1" role="radio" aria-checked="false">
+				<img role="presentation" src="radio-unchecked.gif" /> Thai
+			</li>
+			<li id="r2"  tabindex="-1" role="radio"  aria-checked="false">
+				<img role="presentation" src="radio-unchecked.gif" /> Subway
+			</li>
+			<li id="r3"   tabindex="0" role="radio" aria-checked="true">
+				<img role="presentation" src="radio-checked.gif" /> Radio Maria
+			</li>
+		</ul>
+		<h3 id="rg2_label">Lunch Options</h3>
+		<ul class="radiogroup" id="rg2" role="radiogroup" aria-labelledby="rg2_label"><!-- radiogroup missing any radio elements -->
+			<li id="r21" tabindex="-1" aria-checked="false"><!-- TODO would be great to test for these attributes that do not belong without a role attribute -->
+				<img role="presentation" src="radio-unchecked.gif" /> Thai
+			</li>
+			<li id="r22" tabindex="-1" aria-checked="false">
+				<img role="presentation" src="radio-unchecked.gif" /> Subway
+			</li>
+			<li id="r23" tabindex="0" aria-checked="true">
+				<img role="presentation" src="radio-checked.gif" /> Radio Maria
+			</li>
+		</ul>
 		<div role="menu"></div><!-- Missing required descendants -->
-		<div role="menuitem"></div><!-- Missing required ancestor -->
-		<div role="checkbox"></div><!-- Missing required state -->
+		<div id="menuitemFail" role="menuitem"></div><!-- Missing required ancestor -->
+		<div id="checkbox1" role="checkbox"></div><!-- Missing required state -->
 		<div id="cb1" class="cb">
 			<div class="cb_label"><label id="cb1-label" for="cb1-edit">State</label>:</div>
 			<input id="cb1-edit" class="cb_edit" type="text" role="combobox" aria-labelledby="cb1-label" aria-autocomplete="none" aria-readonly="true" aria-owns="cb1-list" tabindex="0"><!-- Correct use of aria-owns -->
@@ -78,8 +107,11 @@
 			</ul>
 		</div>
 
-		<div role="combobox" id="ownDuplicated" aria-owns="failList1"></div>
-		<span role="listbox" id="failList1"></span>
+		<input id="ownDuplicated" type="text" aria-label="Tag" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-owns="failList1" aria-activedescendant="selected_option"/>
+		<ul role="listbox" id="failList1">
+			<li role="option">Zebra</li>
+			<li role="option" id="selected_option">Zoom</li>
+		</ul>
 
 		<div role="combobox" id="ownNested" aria-owns="failList2"><!-- Should not aria-owns when DOM hierarchy already conveys this -->
 			<span role="listbox" id="failList2"></span>
