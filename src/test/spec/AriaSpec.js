@@ -95,26 +95,83 @@ describe("ARIA", function() {
 		var validator = window.ARIA;
 
 		it("_checkAriaOwns on an element with no aria-owns should not report any problems", function() {
-			ariaOwnsHelper("fileMenu",0 ,0);
+			checkHelper("fileMenu",0 ,0);
 		});
 
 		it("_checkAriaOwns on an element with correctly implemented aria-owns should not report any problems", function() {
-			ariaOwnsHelper("cb1-edit",0 ,0);
+			checkHelper("cb1-edit",0 ,0);
 		});
 
 		it("_checkAriaOwns on an element which is part of a duplicate own", function() {
-			ariaOwnsHelper("ownDuplicated",1 ,0);
+			checkHelper("ownDuplicated",1 ,0);
 		});
 
 		it("_checkAriaOwns on an element which is nested in the DOM", function() {
-			ariaOwnsHelper("ownNested", 0, 1);
+			checkHelper("ownNested", 0, 1);
+		});
+
+		it("_checkContainsRequiredElements with multiple required and aria-owns", function() {
+			checkHelper("cb1-edit", 0, 0, "_checkContainsRequiredElements");
+		});
+
+		it("_checkContainsRequiredElements with single required and dom owns", function() {
+			checkHelper("rg1", 0, 0, "_checkContainsRequiredElements");
+		});
+
+		it("_checkContainsRequiredElements with single required and dom owns and missing required nodes", function() {
+			checkHelper("rg2", 1, 0, "_checkContainsRequiredElements");
+		});
+
+		it("_checkInRequiredScope with single required and dom owns", function() {
+			checkHelper("cb1-opt1", 0, 0, "_checkInRequiredScope");
+		});
+
+		it("_checkInRequiredScope with multiple required and dom owns", function() {
+			checkHelper("menuitem1", 0, 0, "_checkInRequiredScope");
+		});
+
+		it("_checkInRequiredScope not in correct scope", function() {
+			checkHelper("menuitemFail", 1, 0, "_checkInRequiredScope");
+		});
+
+		it("_checkSupportsAllAttributes on mandatory attribute", function() {
+			checkHelper("r1", 0, 0, "_checkSupportsAllAttributes");
+		});
+
+		it("_checkSupportsAllAttributes on global attribute", function() {
+			checkHelper("rg1", 0, 0, "_checkSupportsAllAttributes");
+		});
+
+		it("_checkSupportsAllAttributes on unsupported attribute", function() {
+			checkHelper("menubar1", 1, 0, "_checkSupportsAllAttributes");
+		});
+
+		it("_checkRequiredAttributes on mandatory attribute", function() {
+			checkHelper("r1", 0, 0, "_checkRequiredAttributes");
+		});
+
+		it("_checkRequiredAttributes on missing mandatory attribute", function() {
+			checkHelper("checkbox1", 1, 0, "_checkRequiredAttributes");
+		});
+
+		it("_checkFirstRule on option with option role", function() {
+			checkHelper("badOpt", 0, 1, "_checkFirstRule");
+		});
+
+		it("_checkFirstRule on li with radio role", function() {
+			checkHelper("r1", 0, 0, "_checkFirstRule");
+		});
+
+		it("_checkSecondRule on heading with role", function() {
+			checkHelper("badHeading", 0, 1, "_checkSecondRule");
 		});
 
 
-		function ariaOwnsHelper(id, failCount, warnCount)
+		function checkHelper(id, failCount, warnCount, funcName)
 		{
-			var element = document.getElementById(id),
-				result = validator._checkAriaOwns(element, element.getAttribute("role")),
+			var method = funcName || "_checkAriaOwns",
+				element = document.getElementById(id),
+				result = validator[method](element, element.getAttribute("role")),
 				warnings = result.getWarnings(),
 				failures = result.getFailures();
 			expect(warnings.length).toEqual(warnCount);
