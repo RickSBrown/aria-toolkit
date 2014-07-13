@@ -9,11 +9,11 @@
 		"scripts": ["background.js"]
 	},
 	"icons": {
-		"16": "icon/16/Boton_correcto.png",
-		"48": "icon/48/Boton_correcto.png",
-		"128": "icon/128/Boton_correcto.png"},
+		"16": "icon/16/AVLogo.png",
+		"48": "icon/48/AVLogo.png",
+		"128": "icon/128/AVLogo.png"},
 	"browser_action": {
-		"default_icon": "icon/48/Boton_correcto.png",
+		"default_icon": "icon/48/AVLogo.png",
 		"default_title": "Validate ARIA"
 	},
 	"options_page": "options.html",
