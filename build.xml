@@ -46,10 +46,11 @@ scope = null;
 		<svgToIcon res="128" dest="${chromeExtDistDir}/icon/128" src="${src.dir}/main/icon/"/>
 		<svgToIcon res="48" dest="${chromeExtDistDir}/icon/48" src="${src.dir}/main/icon/"/>
 		<svgToIcon res="16" dest="${chromeExtDistDir}/icon/16" src="${src.dir}/main/icon/"/>
-		<zip destfile="${build.dir}/aria-validator-chrome.zip" basedir="${chromeExtDistDir}"/>
+		<zip destfile="${dist.dir}/aria-validator-chrome-${build.version}.zip" basedir="${chromeExtDistDir}"/>
 	</target>
 
 	<target name="initChromeExt">
+		<property name="validator.app.name" value="ARIA Validator"/>
 		<property name="chromeExtDistDir" location="${build.dir}/${chrome-ext-dir-name}"/>
 		<unzip src="${lib.dir}/batik/${batik}.zip" dest="${build.dir}"/>
 		<mkdir dir="${chromeExtDistDir}"/>

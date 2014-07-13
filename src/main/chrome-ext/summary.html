@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
 /*
- * Chrome Extension for ARIA Validator.
+ * Chrome Extension for ${validator.app.name}.
  *
  * This page displays the results of the validation.
  *
@@ -12,14 +12,16 @@
 -->
 <html>
 	<head>
-		<title>ARIA Validator - Validation Summary</title>
+		<title>${validator.app.name} - Validation Summary</title>
 		<link rel="stylesheet" type="text/css" href="summary.css"/>
 		<script src="summary.js"></script>
 	</head>
 	<body>
-		<h1>ARIA Validator - Validation Summary</h1>
+		<h1>${validator.app.name} - Validation Summary</h1>
 		<div class="credits">
-			<p>ARIA Validator by Rick Brown</p>
+			<p>Disclaimer: This is beta software - you should manually verify results.</p>
+			<p>${validator.app.name} by Rick Brown</p>
+			<p>Version ${build.version}</p>
 			<p>Icons derived from <a href="https://openclipart.org/user-cliparts/Ehecatl1138" target="_blank">http://openclipart.org/</a></p>
 		</div>
 		<!--<p>Multiple results means you have frames</p>-->
