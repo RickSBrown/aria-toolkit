@@ -22,11 +22,19 @@ body
 
 div.credits
 {
+	font-size: xx-small;
 	position: fixed;
 	bottom: 0px;
 	width: 90%;
 	text-align: center;
-	opacity: .9;
+	opacity: .8;
+	color: white;
+}
+
+div.credits a
+{
+	text-decoration: none;
+	color: white;
 }
 
 dt

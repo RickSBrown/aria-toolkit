@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
 /*
- * Chrome Extension for ARIA Validator.
+ * Chrome Extension for ${validator.app.name}.
  *
  * This page displays the options page.
  *
@@ -10,11 +10,11 @@
 -->
 <html>
 	<head>
-		<title>ARIA Validator - Options</title>
+		<title>${validator.app.name} - Options</title>
 		<link rel="stylesheet" type="text/css" href="summary.css"/>
 	</head>
 	<body>
-		<h1>ARIA Validator - Options</h1>
+		<h1>${validator.app.name} - Options</h1>
 		<!--
 		<h2>Pass and Fail Determination</h2>
 		<p>Whether or not your ARIA implementation passes or fails is determined by the rules set out in the WAI-ARIA
@@ -26,12 +26,16 @@
 		-->
 		<fieldset>
 			<legend>Configuration</legend>
+			<p>Currently experimental tests make some limited attempts to detect implementations that contravene the rules set out here:
+				<a target="_blank" href="http://www.w3.org/TR/aria-in-html/">http://www.w3.org/TR/aria-in-html/</a></p>
 			<label>Experimental Tests<input type="checkbox" id="experimental"/></label>
 		</fieldset>
 		<div id="status"></div>
 		<button id="save">Save</button>
 		<div class="credits">
-			<p>ARIA Validator by Rick Brown</p>
+			<p>Disclaimer: This is beta software - you should manually verify results.</p>
+			<p>${validator.app.name} by Rick Brown</p>
+			<p>Version ${build.version}</p>
 			<p>Icons derived from <a href="https://openclipart.org/user-cliparts/Ehecatl1138" target="_blank">http://openclipart.org/</a></p>
 		</div>
 		<script src="options.js"></script>
