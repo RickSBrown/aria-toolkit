@@ -3,11 +3,22 @@
  *
  * Copyright (C) 2014  Rick Brown
  */
+
+html
+{
+	height: 100%;
+}
+
 body
 {
+	margin: 0;
+	padding-left: 1em;
 	font-family: 'Chrome Droid Sans', 'Droid Sans Fallback', 'Lucida Grande', 'sans-serif';
 	font-size: small;
-	background-color: #E5F4FA;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	/*background-color: #E5F4FA;*/
+	background-image: linear-gradient(to bottom, #feffff 0%,#ddf1f9 35%,#a0d8ef 100%);
 }
 
 div.credits
@@ -103,6 +114,10 @@ ul.roles li:last-of-type:after
 h1
 {
 	font-size: 2.2em;
+	background-image: url('icon/48/AVLogo.png');
+	background-repeat: no-repeat;
+	line-height: 48px;
+	padding-left: 56px;
 }
 
 h2
