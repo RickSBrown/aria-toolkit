@@ -143,13 +143,13 @@
 			result[result.length] = "</ul>";
 			if(failures.length)
 			{
-				result[result.length] = "<h2>Problems</h2><ul class='fail'>";
+				result[result.length] = "<h2>Problems</h2><ul class='issues fail'>";
 				result[result.length] = messagesToList(failures);
 				result[result.length] = "</ul>";
 			}
 			if(warnings.length)
 			{
-				result[result.length] = "<h2>Potential Issues</h2><ul class='warn'>";
+				result[result.length] = "<h2>Potential Issues</h2><ul class='issues warn'>";
 				result[result.length] = messagesToList(warnings);
 				result[result.length] = "</ul>";
 			}
