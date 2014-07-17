@@ -98,6 +98,10 @@ describe("ARIA", function() {
 			checkHelper("fileMenu",0 ,0);
 		});
 
+		it("_checkAriaOwns an element with strange characters in ID should not throw exception", function() {
+			checkHelper("ariaOwnsStrangeChars",0 ,0);
+		});
+
 		it("_checkAriaOwns on an element with correctly implemented aria-owns should not report any problems", function() {
 			checkHelper("cb1-edit",0 ,0);
 		});
@@ -166,12 +170,28 @@ describe("ARIA", function() {
 			checkHelper("badHeading", 0, 1, "_checkSecondRule");
 		});
 
+		it("_checkIds on subtree with no duplicates", function(){
+			checkHelper("cb1-list", 0, 0, "_checkIds");
+		});
+
+		it("_checkIds on subtree with duplicates", function(){
+			checkHelper("hasDuplicateIds", 1, 0, "_checkIds");
+		});
+
+		it("_checkIds on id with spaces", function(){
+			checkHelper("idCheckSpace", 1, 0, "_checkIds");
+		});
+
+		it("_checkIds on document with issues", function(){
+			checkHelper(document, 2, 0, "_checkIds");
+		});
+
 
 		function checkHelper(id, failCount, warnCount, funcName)
 		{
 			var method = funcName || "_checkAriaOwns",
-				element = document.getElementById(id),
-				result = validator[method](element, element.getAttribute("role")),
+				element = id.constructor === String? document.getElementById(id) : id,
+				result = validator[method](element, element.nodeType === Node.ELEMENT_NODE? element.getAttribute("role") : ""),
 				warnings = result.getWarnings(),
 				failures = result.getFailures();
 			expect(warnings.length).toEqual(warnCount);

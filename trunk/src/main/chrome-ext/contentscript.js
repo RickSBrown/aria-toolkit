@@ -6,6 +6,7 @@
 (function(scope){
 
 	var options = {
+		ids: true,
 		experimental: false
 	};
 

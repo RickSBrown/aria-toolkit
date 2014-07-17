@@ -116,6 +116,49 @@
 		<div role="combobox" id="ownNested" aria-owns="failList2"><!-- Should not aria-owns when DOM hierarchy already conveys this -->
 			<span role="listbox" id="failList2"></span>
 		</div>
+
+		<!-- The following snippet deliberately includes unusual characters in  attribute values -->
+		<span class="widget-wrapper">
+			<span class="widget-theme bba-qty-sel bba-simple-qty-sel edp" id="qtydd_tpl" style="" tabindex="-1">
+				<span class="off-screen module-js-ignore" id="dropdown_aria_label_{{id}}">
+					<span>Quantity</span>
+					<span class="dropdown-ie-value module-js-ignore">0</span>
+				</span>
+
+				<span id="ariaOwnsStrangeChars" tabindex="0" class="widget-dropdown module-js-ignore" role="combobox" aria-expanded="false" aria-labelledby="dropdown_aria_label_{{id}}" aria-owns="dropdown_aria_list_{{id}}" aria-autocomplete="list" data-guid="{{id}}" data-activedescendant="dropdown_option_{{id}}_0">
+					<span>
+						<b>
+							<b class="widget-default-color dropdown-selected-label module-js-ignore" style="width:21px;" id="dropdown_current_value_{{id}}">0</b>
+						</b>
+					</span>
+				</span>
+				<div style="z-index: 95;" class="hideContent dropdown_option_tooltip" role="tooltip" id="dropdown_option_tooltip_{{id}}">Press spacebar for more information</div>
+				<div class="dropdown-options-form edp" style="display:none;position:absolute;z-index:105">
+
+					<ul class="widget-dropdown-list module-js-ignore" id="dropdown_aria_list_{{id}}" role="listbox">
+							<li id="dropdown_option_{{id}}_" class=" dropdown_default_option " tabindex="0" role="option" aria-disabled="false" aria-selected="true" data-value=""><span class="dropdown_option_text dropdown_option_selected_text">0</span></li>
+							<li id="dropdown_option_{{id}}_1" class="" tabindex="0" role="option" aria-disabled="false" aria-selected="false" data-value="1"><span class="dropdown_option_text dropdown_option_selected_text">1</span></li>
+							<li id="dropdown_option_{{id}}_2" class="" tabindex="0" role="option" aria-disabled="false" aria-selected="false" data-value="2"><span class="dropdown_option_text dropdown_option_selected_text">2</span></li>
+							<li id="dropdown_option_{{id}}_3" class="" tabindex="0" role="option" aria-disabled="false" aria-selected="false" data-value="3"><span class="dropdown_option_text dropdown_option_selected_text">3</span></li>
+							<li id="dropdown_option_{{id}}_4" class="" tabindex="0" role="option" aria-disabled="false" aria-selected="false" data-value="4"><span class="dropdown_option_text dropdown_option_selected_text">4</span></li>
+							<li id="dropdown_option_{{id}}_5" class="" tabindex="0" role="option" aria-disabled="false" aria-selected="false" data-value="5"><span class="dropdown_option_text dropdown_option_selected_text">5</span></li>
+							<li id="dropdown_option_{{id}}_6" class="" tabindex="0" role="option" aria-disabled="false" aria-selected="false" data-value="6"><span class="dropdown_option_text dropdown_option_selected_text">6</span></li>
+							<li id="dropdown_option_{{id}}_7" class="" tabindex="0" role="option" aria-disabled="false" aria-selected="false" data-value="7"><span class="dropdown_option_text dropdown_option_selected_text">7</span></li>
+							<li id="dropdown_option_{{id}}_8" class="" tabindex="0" role="option" aria-disabled="false" aria-selected="false" data-value="8"><span class="dropdown_option_text dropdown_option_selected_text">8</span></li>
+							<li id="dropdown_option_{{id}}_9" class="" tabindex="0" role="option" aria-disabled="false" aria-selected="false" data-value="9"><span class="dropdown_option_text dropdown_option_selected_text">9</span></li>
+							<li id="dropdown_option_{{id}}_10" class="" tabindex="0" role="option" aria-disabled="false" aria-selected="false" data-value="10"><span class="dropdown_option_text dropdown_option_selected_text">10</span></li>
+					</ul>
+
+				</div>
+			</span>
+			<div id="hasDuplicateIds">
+				<span id="duplicateId"></span>
+				<span id="duplicateId"></span>
+			</div>
+			<div id="idCheckSpace">
+				<span id="id withSpace"></span>
+			</div>
+		</span>
 	</div>
 </body>
 </html>

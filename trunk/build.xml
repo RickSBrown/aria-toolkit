@@ -8,7 +8,7 @@
 	<property name="build.dir" location="build"/>
 	<property name="dist.dir" location="dist"/>
 	<property name="test.build.dir" location="${build.dir}"/>
-	<property name="build.version" value="0.4"/>
+	<property name="build.version" value="0.5"/>
 	<property name="chrome-ext-dir-name" value="chrome-ext"/>
 	<property name="lib.dir" location="${basedir}/libs"/>
 	<property name="batik" value="batik-1.7"/>
