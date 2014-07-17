@@ -30,9 +30,17 @@
 	}
 
 	Message.prototype.toString = function(){
-		var source = elementToSource(this.element);
-		return ["<details><summary>", buildSpecLink(this.role, this.isAttribute), " ", this.msg, "</summary><p>",
-			source, "</p></details>"].join("");
+		var source = elementToSource(this.element), result = ["<details><summary>"];
+		if(this.role)
+		{
+			result[result.length] = buildSpecLink(this.role, this.isAttribute);
+			result[result.length] = " ";
+		}
+		result[result.length] = this.msg;
+		result[result.length] = "</summary><p>";
+		result[result.length] = source;
+		result[result.length] = "</p></details>";
+		return result.join("");
 	};
 
 	function elementToSource(element)
@@ -277,14 +285,21 @@
 	 */
 	Summary.prototype.merge = function(summary){
 		var i, next, data, getSet = [/*"Attrs", */{suffix: "Roles"}, {suffix:"Failures"}, {suffix: "Warnings"}];
-		for(i=0; i<getSet.length; i++)
+		if(summary)
 		{
-			next = getSet[i].suffix;
-			data = summary["get" + next]();
-			this["add"+ next](data);
+			for(i=0; i<getSet.length; i++)
+			{
+				next = getSet[i].suffix;
+				data = summary["get" + next]();
+				this["add"+ next](data);
+			}
+			this.framesTotal += summary.framesTotal;
+			this.framesChecked += summary.framesChecked;
 		}
-		this.framesTotal += summary.framesTotal;
-		this.framesChecked += summary.framesChecked;
+		else
+		{
+			console.warn("Tried to merge null summary");
+		}
 	};
 
 	/**
@@ -338,6 +353,7 @@
 		$this._checkRequiredAttributes = checkRequiredAttributes;
 		$this._checkFirstRule = checkFirstRule;
 		$this._checkSecondRule = checkSecondRule;
+		$this._checkIds = checkIds;
 
 		/**
 		 * Call ARIA.check to check the correctness of any ARIA roles and attributes used in this DOM.
@@ -349,7 +365,7 @@
 		 */
 		$this.check = function(window, options)
 		{
-			var result = [], document, body, frames, i, next, frameSummary;
+			var result = [], document, body, frames, i, next, frameSummary, idResult;
 			if(window && ((document = window.document) && (body = document.body)))
 			{
 				next = checkByRole(body);
@@ -357,6 +373,10 @@
 				result[result.length] = next;
 				frames = window.frames;
 				next.framesTotal = frames.length;
+				if(options.ids)
+				{
+					next.merge(checkIds(document));
+				}
 				for(i=0; i<frames.length; i++)
 				{
 					try
@@ -448,6 +468,34 @@
 				if(HIGHLY_SEMANTIC_HTML.hasOwnProperty(tagName))
 				{
 					result.addWarnings(new Message(" on " + tagName + " possibly violates <a target='_blank' href='http://www.w3.org/TR/aria-in-html/#second'>2nd rule</a>", role, element));
+				}
+			}
+			return result;
+		}
+		
+		/*
+		 * Not strictly speaking an ARIA check however ARIA does depend heavily on IDs being correctly implemented.
+		 * Plus it is a pet hate of mine, duplicate IDs.
+		 * @param {Document} element A document element (node type 9 off the top of my head)
+		 */
+		function checkIds(element)
+		{
+			var result = new Summary(), i, next, nextId, len, elements = element.querySelectorAll("[id]"), found = {};
+			if(elements && (len = elements.length))
+			{
+				for(i=0; i<len; i++)
+				{
+					next = elements[i];
+					nextId = next.id;
+					if(nextId in found && found.hasOwnProperty(nextId))
+					{
+						result.addFailures(new Message("Found duplicate id '" + nextId + "'", null, next));
+					}
+					else if(nextId.indexOf(" ") >= 0)
+					{
+						result.addFailures(new Message("Found id '" + nextId + "' but IDs are not allowed to have space characters", null, next));
+					}
+					found[nextId] = 1;
 				}
 			}
 			return result;
@@ -648,7 +696,8 @@
 			var id = element.id, ownerQuery, result, document = element.ownerDocument;
 			if(id)
 			{
-				ownerQuery = "[aria-owns~=" + id  + "]";
+				id = id.replace(/'/g, "\\'");
+				ownerQuery = "[aria-owns~='" + id  + "']";
 				result = document.querySelectorAll(ownerQuery);
 				if(!showAll)
 				{

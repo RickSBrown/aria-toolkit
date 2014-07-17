@@ -5,15 +5,26 @@
  * Copyright (C) 2014  Rick Brown
  */
 (function(scope){
-
+	var options = {
+		ids: true,
+		experimental: false
+	};
 	// Saves options to chrome.storage
 	function saveOptions()
 	{
-		var experimental = scope.document.getElementById("experimental");
-		experimental = (experimental && experimental.checked);
-		scope.chrome.storage.sync.set({
-			experimental: experimental
-		},function() {
+		var id, element, values = {};
+		for(id in options)
+		{
+			if(options.hasOwnProperty(id))
+			{
+				element = scope.document.getElementById(id);
+				if(element)
+				{
+					values[id] = element.checked;
+				}
+			}
+		}
+		scope.chrome.storage.sync.set(values,function() {
 			var status = scope.document.getElementById("status");
 			status.textContent = "Options saved.";
 			setTimeout(function() {
@@ -24,13 +35,18 @@
 
 	function restoreOptions()
 	{
-		scope.chrome.storage.sync.get({
-			experimental: false
-		}, function(items) {
-			var experimental = scope.document.getElementById("experimental");
-			if(experimental)
+		scope.chrome.storage.sync.get(options, function(items) {
+			var id, element;
+			for(id in options)
 			{
-				experimental.checked = items.experimental;
+				if(options.hasOwnProperty(id))
+				{
+					element = scope.document.getElementById(id);
+					if(element)
+					{
+						element.checked = items[id];
+					}
+				}
 			}
 		});
 	}
