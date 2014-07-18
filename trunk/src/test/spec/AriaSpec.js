@@ -186,6 +186,14 @@ describe("ARIA", function() {
 			checkHelper(document, 2, 0, "_checkIds");
 		});
 
+		it("_checkAbstractRole on an element with an abstract role", function(){
+			checkHelper("abstractRoleUsed", 1, 0, "_checkAbstractRole");
+		});
+
+		it("_checkAbstractRole on an element with a widget role", function(){
+			checkHelper("menuitem1", 0, 0, "_checkAbstractRole");
+		});
+
 
 		function checkHelper(id, failCount, warnCount, funcName)
 		{

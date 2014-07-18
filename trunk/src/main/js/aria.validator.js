@@ -334,7 +334,8 @@
 					checkContainsRequiredElements,
 					checkRequiredAttributes,
 					checkSupportsAllAttributes,
-					checkAriaOwns]
+					checkAriaOwns,
+					checkAbstractRole]
 			},
 			ARIA_ATTR_RE = /^aria\-/,
 			HIGHLY_SEMANTIC_HTML = {
@@ -344,7 +345,20 @@
 				H4:"H4",
 				H5:"H5",
 				H6:"H6"
-			};
+			},
+			ABSTRACT_ROLES = {
+				"command":true,
+				"composite":true,
+				"input":true,
+				"landmark":true,
+				"range":true,
+				"roletype":true,
+				"section":true,
+				"sectionhead":true,
+				"select":true,
+				"structure":true,
+				"widget":true,
+				"window":true};
 
 		/* TEST HOOKS - YEP, MAKING IT PUBLIC JUST FOR TESTING */
 		$this._checkAriaOwns = checkAriaOwns;
@@ -355,6 +369,7 @@
 		$this._checkFirstRule = checkFirstRule;
 		$this._checkSecondRule = checkSecondRule;
 		$this._checkIds = checkIds;
+		$this._checkAbstractRole = checkAbstractRole;
 
 		/**
 		 * Call ARIA.check to check the correctness of any ARIA roles and attributes used in this DOM.
@@ -557,6 +572,19 @@
 						console.log("This can not possibly happen");
 					}
 				}
+			}
+			return result;
+		}
+
+		/*
+		 * Another check that cannot be determined by the information in the RDF.
+		 */
+		function checkAbstractRole(element, role)
+		{
+			var result = new Summary();
+			if(role && ABSTRACT_ROLES[role] && ABSTRACT_ROLES.hasOwnProperty(role))
+			{
+				result.addFailures(new Message(" Authors MUST NOT use abstract roles in content.", role, element));
 			}
 			return result;
 		}
