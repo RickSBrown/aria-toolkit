@@ -671,7 +671,7 @@
 		 */
 		function checkContainsRequiredElements(element, role)
 		{
-			var i, j, required = $this.getMustContain(role),
+			var i, j, required = $this.getMustContain(role), busy,
 				result = new Summary(), owned, next,
 				passed = !required.length;
 			if(!passed)
@@ -708,7 +708,15 @@
 			}
 			if(!passed)
 			{
-				result.addFailures(new Message("does not contain required roles: " + required.join(" | "), role, element));
+				busy = element.getAttribute("aria-busy");
+				if(busy === "true")
+				{
+					result.addFailures(new Message("does not contain required roles (but it is busy, maybe you need to wait longer?): " + required.join(" | "), role, element));
+				}
+				else
+				{
+					result.addFailures(new Message("does not contain required roles: " + required.join(" | "), role, element));
+				}
 			}
 			return result;
 		}
