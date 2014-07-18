@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "${validator.app.name}",
-	"description": "Scans page for WAI-ARIA implementation issues. Not an HTML5 validtor, just ARIA and nothing else.",
+	"description": "Scans page for WAI-ARIA implementation issues.",
 	"author": "Rick Brown",
 	"version": "${build.version}",
 	"background": {

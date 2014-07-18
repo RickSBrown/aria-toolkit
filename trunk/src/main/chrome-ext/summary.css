@@ -54,6 +54,15 @@ body .validatorResults
 	float:left;
 }
 
+body .validatorResults.zoomed
+{
+	width: 90%;
+	height: 100%;
+	border: 4px outset;
+	z-index: 99;
+	position:absolute;
+}
+
 body .validatorResults dd, body .validatorResults dt
 {
 	margin-right: 1em;
@@ -68,6 +77,11 @@ body .result
 	font-size:large;
 	margin-top: 0;
 	margin-bottom: 0;
+}
+
+button.zoom
+{
+	float:right;
 }
 
 body .fail .result

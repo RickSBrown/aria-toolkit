@@ -16,7 +16,7 @@
 		var html;
 		if(attr)
 		{
-			html = '<a target="_blank" href="http://www.w3.org/TR/wai-aria/states_and_properties#aria-owns#{name}">{name}</a>';
+			html = '<a target="_blank" href="http://www.w3.org/TR/wai-aria/states_and_properties#{name}">{name}</a>';
 		}
 		else
 		{
@@ -52,7 +52,7 @@
 			{
 				result = element.outerHTML;
 				result = result.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-				result = "<pre>" + result + "</pre>";
+				result = "<code>" + result + "</code>";
 			}
 			else if(element.length)
 			{
@@ -121,6 +121,7 @@
 			result = ["<div class='validatorResults "];
 		result[result.length] = cssClass;
 		result[result.length] = "'>";
+		result[result.length] = "<button class='zoom' title='Enlarge this section. Esc to unzoom.'>Zoom</button>";
 		if(roles.length)
 		{
 			result[result.length] = "<h2>Result</h2><p class='result'>";
@@ -149,22 +150,22 @@
 				return ["<li>", role, "</li>"].join("");
 			}));
 			result[result.length] = "</ul>";
-			if(failures.length)
-			{
-				result[result.length] = "<h2>Problems</h2><ul class='issues fail'>";
-				result[result.length] = messagesToList(failures);
-				result[result.length] = "</ul>";
-			}
-			if(warnings.length)
-			{
-				result[result.length] = "<h2>Potential Issues</h2><ul class='issues warn'>";
-				result[result.length] = messagesToList(warnings);
-				result[result.length] = "</ul>";
-			}
 		}
 		else
 		{
 			result[result.length] = "<p>No ARIA Roles found in this document</p>";
+		}
+		if(failures.length)
+		{
+			result[result.length] = "<h2>Problems</h2><ul class='issues fail'>";
+			result[result.length] = messagesToList(failures);
+			result[result.length] = "</ul>";
+		}
+		if(warnings.length)
+		{
+			result[result.length] = "<h2>Potential Issues</h2><ul class='issues warn'>";
+			result[result.length] = messagesToList(warnings);
+			result[result.length] = "</ul>";
 		}
 		result[result.length] = "</div>";
 		return result.join("");
@@ -472,7 +473,7 @@
 			}
 			return result;
 		}
-		
+
 		/*
 		 * Not strictly speaking an ARIA check however ARIA does depend heavily on IDs being correctly implemented.
 		 * Plus it is a pet hate of mine, duplicate IDs.
