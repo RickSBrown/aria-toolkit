@@ -45,7 +45,7 @@
 
 	function elementToSource(element)
 	{
-		var result, i;
+		var result = "", i;
 		if(element)
 		{
 			if(element.nodeType === Node.ELEMENT_NODE)
@@ -65,10 +65,6 @@
 			{
 				result = element.toString();
 			}
-		}
-		else
-		{
-			result = "";
 		}
 		return result;
 	}
