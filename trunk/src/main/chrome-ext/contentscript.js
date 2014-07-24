@@ -5,17 +5,20 @@
  */
 (function(scope){
 
-	var options = {
-		ids: true,
-		experimental: false
-	};
+	var options;
 
-	scope.chrome.storage.sync.get(options, updateOptions);
-	scope.chrome.runtime.onMessage.addListener(messageEvent);
-	scope.chrome.storage.onChanged.addListener(storageChangedEvent);
+	scope.chrome.extension.sendMessage({action:"optionsmap"}, initialize);
+
+	function initialize(options)
+	{
+		scope.chrome.storage.sync.get(options, updateOptions);
+		scope.chrome.runtime.onMessage.addListener(messageEvent);
+		scope.chrome.storage.onChanged.addListener(storageChangedEvent);
+	}
 
 	function updateOptions(obj)
 	{
+		console.log("options", obj);
 		options = obj;
 	}
 

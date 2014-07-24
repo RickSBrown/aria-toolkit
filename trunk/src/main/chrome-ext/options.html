@@ -25,12 +25,21 @@
 		</p>
 		-->
 		<fieldset>
-			<legend>Configuration</legend>
+			<legend>Optional Validation</legend>
 			<p>Currently experimental tests make some limited attempts to detect implementations that contravene the rules set out here:
 				<a target="_blank" href="http://www.w3.org/TR/aria-in-html/">http://www.w3.org/TR/aria-in-html/</a></p>
 			<label>Experimental Tests<input type="checkbox" id="experimental"/></label>
+			<p>Core validation only checks elements with a 'role' attribute.</p>
+			<label>Check elements with 'aria-' attributes<input checked="checked" type="checkbox" id="attributes" title="Enable checks on elements with no aria role"/></label>
 			<p>Many parts of ARIA depend on correctly implemented IDs in your HTML.</p>
 			<label>Check IDs<input checked="checked" type="checkbox" id="ids"/></label>
+		</fieldset>
+		<p>I'm confused about the rules for 'aria-required'. You can decide for yourself.</p>
+		<fieldset>
+			<legend>aria-required is allowed</legend>
+			<label>anywhere<input type="radio" id="ignorerequired" name="ariarequired"/></label>
+			<label>only on elements that do NOT support HTML5 'required'<input type="radio" id="requiredxornative" name="ariarequired"/></label>
+			<label>only on elements that DO support HTML5 'required'<input type="radio" id="requiredandnative" name="ariarequired"/></label>
 		</fieldset>
 		<div id="status"></div>
 		<button id="save">Save</button>

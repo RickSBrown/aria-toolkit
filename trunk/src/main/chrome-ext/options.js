@@ -5,36 +5,72 @@
  * Copyright (C) 2014  Rick Brown
  */
 (function(scope){
-	var options = {
-		ids: true,
-		experimental: false
-	};
+	var options;
+
+	scope.document.addEventListener("DOMContentLoaded", initialize);
+
+	function initialize()
+	{
+		scope.chrome.extension.sendMessage({action:"optionsmap"}, restoreOptions);
+		scope.document.getElementById("save").addEventListener("click", saveOptions);
+	}
+
+//	function buildOptionList()
+//	{
+//		var i, result = {}, id, next, elements = document.querySelectorAll("input");
+//		for(i=0; i<elements.length; i++)
+//		{
+//			next = elements[i];
+//			id = next.id;
+//			if(id)
+//			{
+//				if(next.type === "checkbox" || next.type === "radio")
+//				{
+//					result[id] = next.checked;
+//				}
+//				else
+//				{
+//					result[id] = next.value;
+//				}
+//			}
+//		}
+//		return result;
+//	}
+
 	// Saves options to chrome.storage
 	function saveOptions()
 	{
 		var id, element, values = {};
-		for(id in options)
+		if(options)
 		{
-			if(options.hasOwnProperty(id))
+			for(id in options)
 			{
-				element = scope.document.getElementById(id);
-				if(element)
+				if(options.hasOwnProperty(id))
 				{
-					values[id] = element.checked;
+					element = scope.document.getElementById(id);
+					if(element)
+					{
+						values[id] = element.checked;
+					}
 				}
 			}
+			scope.chrome.storage.sync.set(values,function() {
+				var status = scope.document.getElementById("status");
+				status.textContent = "Options saved.";
+				setTimeout(function() {
+					status.textContent = "";
+				}, 750);
+			});
 		}
-		scope.chrome.storage.sync.set(values,function() {
-			var status = scope.document.getElementById("status");
-			status.textContent = "Options saved.";
-			setTimeout(function() {
-				status.textContent = "";
-			}, 750);
-		});
+		else
+		{
+			console.error("Options were not restored corrrectly");
+		}
 	}
 
-	function restoreOptions()
+	function restoreOptions(obj)
 	{
+		options = obj;
 		scope.chrome.storage.sync.get(options, function(items) {
 			var id, element;
 			for(id in options)
@@ -50,7 +86,4 @@
 			}
 		});
 	}
-
-	scope.document.addEventListener("DOMContentLoaded", restoreOptions);
-	scope.document.getElementById("save").addEventListener("click", saveOptions);
 })(this);

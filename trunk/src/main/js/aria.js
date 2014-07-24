@@ -25,13 +25,34 @@ function ARIA(config)
 	$this.getScopedTo = getScopedFactory("role:scope");
 	$this.getScopedBy = getScopedFactory("role:mustContain");
 	$this.getConcept = getConcept;
-	
+
+	/**
+	 * Determine if this role is in the ARIA RDF.
+	 * @param {string} role
+	 * @returns {boolean} true if this role is in the ARIA RDF.
+	 * @example hasRole("foobar");//returns false
+	 * @example hasRole("combobox");//returns true (at time of writing but this could change with newer versions of ARIA)
+	 */
+	$this.hasRole = function(role){
+		var result;
+		if(role)
+		{
+			result = !!getInstance(role);
+		}
+		else
+		{
+			result = false;
+		}
+		return result;
+	};
+
 	$this.setRdf = function(rdf){
 		xmlDoc = rdf;
 	};
 	$this.getRdf = function(){
 		return xmlDoc;
 	};
+
 	/**
 	 * Call to perform one-time initialisation routine
 	 */
@@ -43,52 +64,55 @@ function ARIA(config)
 			buildConstructors();
 		}
 	}
-	
+
 	/**
 	 * Find all the aria attributes supported/required by this element/role.
-	 * Note that if role is anything other than a known ARIA role then the supported
-	 * attributes will be the global ARIA attributes.
+	 * Note that if role is anything other than a known ARIA role then the supported attributes will be the global ARIA attributes, except:
+	 * if role is '*' all known aria states/properties will be returned.
 	 * @see http://www.w3.org/TR/wai-aria/states_and_properties#global_states
 	 *
 	 * @param {string|Element} role An ARIA role or a DOM element
-	 * @return {Object} an object whose properties are the supported attributes. The values of these properties
-	 * will be either SUPPORTED or REQUIRED
+	 * @return {Object} an object whose properties are the supported attributes. The values of these properties will be either SUPPORTED or REQUIRED
 	 * @example getSupported("checkbox");
 	 */
 	$this.getSupported = function(role)
 	{
 		var result, in$tance, F = function(){};
 		initialise();
-		if(role)
+		if(role === "*")
 		{
-			if(role.getAttribute)
-			{
-				role = role.getAttribute("role") || baseRole;
-			}
+			result = getAllStates();
 		}
 		else
 		{
-			role = baseRole;
-		}
-		in$tance = getInstance(role);
-		if(in$tance)
-		{
-			/*
-			 * we could return the actual instance (dangerous)
-			 * or a clone (would have to clone it)
-			 * or a new object that inherits all the properties
-			 */
-			F.prototype = in$tance;
-			result = new F();
+			if(role && role.getAttribute)
+			{
+				role = role.getAttribute("role");
+			}
+			if(!role || !$this.hasRole(role))
+			{
+				role = baseRole;
+			}
+			in$tance = getInstance(role);
+			if(in$tance)
+			{
+				/*
+				 * we could return the actual instance (dangerous)
+				 * or a clone (would have to clone it)
+				 * or a new object that inherits all the properties
+				 */
+				F.prototype = in$tance;
+				result = new F();
+			}
 		}
 		return result;
 	};
-	
+
 	function getScopedFactory(nodeName)
 	{
 		var cache = {};
 		/**
-		 * Given an ARIA role will find the container role/s (if any) which "contain" this role. 
+		 * Given an ARIA role will find the container role/s (if any) which "contain" this role.
 		 *
 		 * This is to allow for asymetrical scoping in ARIA. For example, the role
 		 * "menubar" is not required to contain anything, therefore:
@@ -166,7 +190,7 @@ function ARIA(config)
 		 * getScope: Find the "Required Context Role" for this role
 		 * getMustContain: Find the "Required Owned Elements" for this role
 		 * @param {string} [role] An ARIA role OR if not provided will return ALL
-		 * 	roles that have a "Required Context Role" (for getScope) or ALL roles
+		 *  roles that have a "Required Context Role" (for getScope) or ALL roles
 		 *  that have "Required Owned Elements" (for getMustContain)
 		 * @return {Array} An array of strings representing ARIA roles
 		 * @example getScope("menuitem");
@@ -187,10 +211,10 @@ function ARIA(config)
 			return result;
 		};
 	}
-	
+
 	/*
 	 * @param {string} role An ARIA role
-	 * @return {object} An instance the internal ARIA class for this role 
+	 * @return {object} An instance the internal ARIA class for this role
 	 * 	which stores aria property support information
 	 */
 	function getInstance(role)
@@ -203,7 +227,7 @@ function ARIA(config)
 		}
 		return in$tance;
 	}
-	
+
 	/*
 	 * @param {string} [role] An ARIA role
 	 * @param {boolean} [firstMatch] Set to true to return a single node only
@@ -229,7 +253,25 @@ function ARIA(config)
 		}
 		return result;
 	}
-	
+
+	/**
+	 * Return a listing of every possible ARIA state or property.
+	 * Nothing needs this... but it might?
+	 * @returns {Object} Each property on the object is an aria state/property.
+	 */
+	function getAllStates()
+	{
+		var i, xpathQuery = "//role:requiredState/@rdf:resource|//role:supportedState/@rdf:resource",
+			attrs = config.query(xpathQuery, false, xmlDoc),
+			attrs = cleanRoles(attrs),
+			result = {};
+		for(i=attrs.length-1; i>=0; i--)
+		{
+			result[attrs[i]] = $this.SUPPORTED;//supported/required really meaningless here because there is no role context
+		}
+		return result;
+	}
+
 	/*
 	 * @param {string} type either "role:scope" or "role:mustContain"
 	 */
@@ -239,7 +281,7 @@ function ARIA(config)
 			result = config.query(expression, false, xmlDoc);
 		return cleanRoles(result);
 	}
-	
+
 	function cleanRoles(roles)
 	{
 		return clean(roles, ANCHOR_ONLY_RE);
@@ -261,7 +303,7 @@ function ARIA(config)
 				return next.nodeValue.replace(re, "");
 			});
 	}
-	
+
 	/*
 	 * Initialize the constructors
 	 * Should only be called once.
@@ -273,7 +315,7 @@ function ARIA(config)
 		{
 			buildConstructor(classes[i]);
 		}
-		
+
 		/*
 		 * Build a JS "class" that represents an ARIA role.
 		 * @param {Element} an owl:Class element from the ARIA taxonomy
@@ -307,7 +349,7 @@ function ARIA(config)
 				}
 			}
 		}
-		
+
 		/*
 		 * Add the ARIA states/properties to this object
 		 * @param {Object} in$tance An instance of an ARIA class

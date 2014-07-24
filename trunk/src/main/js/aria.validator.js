@@ -10,9 +10,15 @@
  */
 (function(){
 
+	/**
+	 * Builds the HTML to link back to the relevant ARIA spec at w3.org.
+	 *
+	 * @param {string} name The name of the aria attribute in question.
+	 * @param {boolean} [attr] If true this aria attribute is a state or a property, otherwise it's a role.
+	 * @return {string} HTML markup for a link to the relevant spec.
+	 */
 	function buildSpecLink(name, attr)
 	{
-
 		var html;
 		if(attr)
 		{
@@ -22,7 +28,7 @@
 		{
 			html = '<a target="_blank" href="http://www.w3.org/TR/wai-aria/roles#{name}">{name}</a>';
 		}
-		if(name)//TODO validate that it's a real target?
+		if(name)//TODO validate that it's a genuine target in the spec?
 		{
 			html = html.replace(/\{name\}/g, name);
 		}
@@ -43,6 +49,11 @@
 		return result.join("");
 	};
 
+	/**
+	 * Generates an HTML string which holds the escaped HTML for a given element surrounded with 'code' tags.
+	 * @param {Element} element The DOM element we want to represent as HTML.
+	 * @return {string} The source HTML for the given element wrapped in 'code' tags.
+	 */
 	function elementToSource(element)
 	{
 		var result = "", i;
@@ -108,6 +119,9 @@
 		return Object.keys(instance[name]);
 	};
 
+	/*
+	 * TODO is this a bit too specific to the Chrome Extension? Move out of the core validator?
+	 */
 	Summary.prototype.toHtml = function(){
 		var roles = this.getRoles(),
 			failures = this.getFailures(),
@@ -314,14 +328,15 @@
 		//this.attrs = {};
 	}
 
-	AriaValidator.call(window.ARIA);
+	AriaValidator.call(window.ARIA);//mixin the public API of the AriaValidator to the base ARIA object.
 	/**
 	 * @this ARIA
 	 */
 	function AriaValidator()
 	{
 		var $this = this,
-			roleChecks = {
+			checkByAttributeQuery,//cache the attribute query once it has been built once
+			roleChecks = {//todo, pull experiments out of roleChecks?
 				experiments:[
 					checkFirstRule,
 					checkSecondRule
@@ -331,10 +346,14 @@
 					checkRequiredAttributes,
 					checkSupportsAllAttributes,
 					checkAriaOwns,
-					checkAbstractRole]
+					checkAbstractRole,
+					checkKnownRole]
+			},
+			attributeChecks = {
+				tests:[checkSupportsAllAttributes]
 			},
 			ARIA_ATTR_RE = /^aria\-/,
-			HIGHLY_SEMANTIC_HTML = {
+			HIGHLY_SEMANTIC_HTML = {//google: aria "strong native semantics"
 				H1:"H1",
 				H2:"H2",
 				H3:"H3",
@@ -356,7 +375,7 @@
 				"widget":true,
 				"window":true};
 
-		/* TEST HOOKS - YEP, MAKING IT PUBLIC JUST FOR TESTING */
+		/* TEST HOOKS - YEP, MAKING IT PUBLIC JUST FOR UNIT TESTING - THE BENEFIT OUTWEIGHS THE COST */
 		$this._checkAriaOwns = checkAriaOwns;
 		$this._checkContainsRequiredElements = checkContainsRequiredElements;
 		$this._checkInRequiredScope = checkInRequiredScope;
@@ -366,18 +385,21 @@
 		$this._checkSecondRule = checkSecondRule;
 		$this._checkIds = checkIds;
 		$this._checkAbstractRole = checkAbstractRole;
+		$this._checkByAttribute = checkByAttribute;
 
 		/**
 		 * Call ARIA.check to check the correctness of any ARIA roles and attributes used in this DOM.
 		 * @param {Window} window The browser window.
-		 * @param {Object} [options] Configuration options.
+		 * @param {Object} [options] Configuration options, as documented below:
+		 * options.attributes - if true run checks
 		 * options.experimental - if true run experimental tests
+		 * options.ids - if true check IDs (not a true aria test but critical to aria success)
 		 * @return {Summary[]} A summary of ARIA usage within this document and any frames it contains.
 		 * @example ARIA.check(document.body);
 		 */
 		$this.check = function(window, options)
 		{
-			var result = [], document, body, frames, i, next, frameSummary, idResult;
+			var result = [], document, body, frames, i, next, frameSummary, attributeResult;
 			if(window && ((document = window.document) && (body = document.body)))
 			{
 				next = checkByRole(body);
@@ -388,6 +410,14 @@
 				if(options.ids)
 				{
 					next.merge(checkIds(document));
+				}
+				if(options.attributes)
+				{
+					attributeResult = checkByAttribute(body);
+				}
+				if(attributeResult)
+				{
+					next.merge(attributeResult);
 				}
 				for(i=0; i<frames.length; i++)
 				{
@@ -409,6 +439,9 @@
 			return result;
 		};
 
+		/*
+		 * TOP LEVEL CHECK
+		 */
 		function checkByRole(element, options)
 		{
 			var result = new Summary(), role, next, i, elements = element.querySelectorAll("[role]"),
@@ -437,6 +470,59 @@
 			return result;
 		}
 
+		/*
+		 * TOP LEVEL CHECK
+		 */
+		function checkByAttribute(element, options)
+		{
+			var next, result = new Summary(), i, nextI,
+				tests = attributeChecks.tests,
+				query = checkByAttributeQuery || (checkByAttributeQuery = buildAttributeQuery()),
+				document = (element.nodeType !== Node.DOCUMENT_NODE ? element.ownerDocument : element),
+				iterator = document.evaluate(query, element, null, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
+			try
+			{
+				while((next = iterator.iterateNext()))
+				{
+					for(i=0; i<tests.length; i++)
+					{
+						nextI = tests[i](next, null);
+						result.merge(nextI);
+					}
+				}
+			}
+			catch(ex)
+			{
+				console.error("Error: Document tree modified during iteration" + ex);
+			}
+			return result;
+		}
+
+		/*
+		 * Helper for checkByAttribute.
+		 * Builds an XPath query that selects all nodes with no role with "aria-*" attributes that are not global.
+		 * ./descendant-or-self::node()[not(@role)][@*[starts-with(name(), 'aria-') and not(name()='aria-label' or name()='aria-hidden' or etc etc etc)]]
+		 */
+		function buildAttributeQuery()
+		{
+			var prop,
+				global = $this.getSupported(),
+				predicates = [],
+				result = "./descendant-or-self::node()[not(@role)][@*[starts-with(name(), 'aria-') and not({predicates})]]";
+			for(prop in global)
+			{
+				predicates[predicates.length] = "name()='"+ prop + "'";
+			}
+			result = result.replace(/\{predicates\}/, predicates.join(" or "));
+			return result;
+		}
+
+		/*
+		 * Gets the role from an element.
+		 * TODO why did I think this needed a helper? Kind of pointless.
+		 * @param {Element} element The DOM element whose role we want.
+		 * @return {string} The role of this element, if found.
+		 */
 		function getRole(element)
 		{
 			var result;
@@ -448,6 +534,7 @@
 		}
 
 		/*
+		 * EXPERIMENTAL
 		 * This is really difficult to test programatically - allow as optional check
 		 */
 		function checkFirstRule(element, role)
@@ -468,6 +555,7 @@
 		}
 
 		/*
+		 * EXPERIMENTAL
 		 * This is really difficult to test programatically - allow as optional check
 		 */
 		function checkSecondRule(element, role)
@@ -486,6 +574,7 @@
 		}
 
 		/*
+		 * TOP LEVEL CHECK
 		 * Not strictly speaking an ARIA check however ARIA does depend heavily on IDs being correctly implemented.
 		 * Plus it is a pet hate of mine, duplicate IDs.
 		 * @param {Document} element A document element (node type 9 off the top of my head)
@@ -598,29 +687,50 @@
 			return result;
 		}
 
+		/*
+		 * Check that all the 'aria-*' attributes on this element are supported.
+		 * @param {Element} element The element we are checking for aria-* attributes.
+		 * @param {string} role The role of this element - empty if the element has no role.
+		 * @return {Summary} A summary of issues found.
+		 */
 		function checkSupportsAllAttributes(element, role)
 		{
 			var supported = $this.getSupported(role),
-				result = new Summary(), i, next, attributes;
+				result = new Summary(), message, i, next, attributes;
 			attributes = element.attributes;
-			if(supported)//it is possible we have an unsupported role AND aria attributes - hence null check on supported
+			for(i=attributes.length-1; i>=0; i--)
 			{
-				for(i=attributes.length-1; i>=0; i--)
+				next = attributes[i].name;
+				if(ARIA_ATTR_RE.test(next))
 				{
-					next = attributes[i].name;
-					if(ARIA_ATTR_RE.test(next))
+					//result.addAttrs(next);
+					if(!(next in supported))
 					{
-						//result.addAttrs(next);
-						if(!(next in supported))
+						if(role)
 						{
-							result.addFailures(new Message("unsupported attribute: " + next, role, element));
+							message = new Message("unsupported attribute: " + next, role, element);
 						}
+						else
+						{
+							message = new Message("is not supported on this element (see " + buildSpecLink("global_states", true) + ")", next, element);
+							message.isAttribute = true;
+						}
+						result.addFailures(message);
 					}
 				}
 			}
-			else//it's not a real aria role
+			return result;
+		}
+
+		/*
+		 * Check that this is a known ARIA role.
+		 */
+		function checkKnownRole(element, role)
+		{
+			var result = new Summary();
+			if(role && !$this.hasRole(role))
 			{
-				result.addFailures(new Message("role does not exist in ARIA", role, element));//TODO this is not the right place for this test
+				result.addFailures(new Message("role does not exist in ARIA", role, element));
 			}
 			return result;
 		}
@@ -773,6 +883,11 @@
 			return result;
 		};
 
+		/**
+		 * Convert a space separated list of IDs to an array of IDs.
+		 * @param {string} val A space separated list of IDs
+		 * @returns {string[]} An array of the IDs in 'val'.
+		 */
 		function splitAriaIdList(val)
 		{
 			var result;
@@ -786,7 +901,6 @@
 			}
 			return result;
 		}
-
 	}
 
 })();

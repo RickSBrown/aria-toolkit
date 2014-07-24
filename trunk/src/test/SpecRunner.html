@@ -152,6 +152,35 @@
 				</div>
 			</span>
 		</span>
+		<div id="attributeCheckTree">
+			<div>
+				<div id="invalidAttrNoRole" aria-kungfu="false" aria-fukung="test" aria-hidden="false" aria-label="test"></div>
+			</div>
+			<div id="invalidAttrAndGlobalAttrNoRoleAncestor">
+				<div role="section">
+					<div id="invalidAttrAndGlobalAttrNoRole" aria-kungfu="false" aria-fukung="test"></div>
+				</div>
+			</div>
+			<div id="globalAttrsNoRole" aria-hidden="false" aria-label="test"></div>
+			<div id="globalAttrsAndRole" role="section" aria-hidden="false" aria-label="test"></div>
+			<div id="globalAttrsAndInvalidRole" role="foobar" aria-hidden="false"aria-label="test"></div>
+			<div id="nonglobalAttrsNoRole" aria-checked="false"></div>
+			<div id="nonglobalAttrsAndRole" role="section" aria-checked="false"></div>
+			<div>
+				<div>
+					<div id="nonglobalAttrsAndInvalidRole" role="foobar" aria-checked="false"></div>
+				</div>
+			</div>
+			<div id="mixedAttrsNoRole" aria-hidden="false" aria-label="test" aria-checked="false"></div>
+			<div id="mixedAttrsAndRole" role="section" aria-hidden="false" aria-label="test" aria-checked="false"></div>
+			<div id="mixedAttrsAndInvalidRoles" role="foobar" aria-hidden="false"aria-label="test" aria-checked="false" aria-pressed="false"></div>
+			<ul tabindex="-1" aria-expanded="false" role="listbox" style="display: none;">
+				<li role="option" class="cb_option" tabindex="-1">Alabama</li>
+				<li role="option" class="cb_option" tabindex="-1">Alaska</li>
+				<li role="option" class="cb_option" tabindex="-1">American Samoa</li>
+				<li role="option" class="cb_option" tabindex="-1">Arizona</li>
+			</ul>
+		</div>
 		<div id="hasDuplicateIds">
 			<span id="duplicateId"></span>
 			<span id="duplicateId"></span>
