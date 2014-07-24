@@ -4,7 +4,29 @@
  * Copyright (C) 2014  Rick Brown
  */
 (function(scope){
-	var rdf = loadXml("xml/aria-1.rdf");
+	var rdf = loadXml("xml/aria-1.rdf"),
+		DEFAULT_OPTIONS = {
+			ids: true,
+			experimental: false,
+			ignorerequired: true,
+			requiredxornative: false,
+			requiredandnative: false,
+			attributes: true
+		};
+
+	scope.chrome.extension.onMessage.addListener(messageEvent);
+
+	function messageEvent(request, sender, sendResponse)
+	{
+		switch(request.action)
+		{
+			case "optionsmap":
+				sendResponse(DEFAULT_OPTIONS);
+				break;
+			default:
+				sendResponse({});
+		}
+	}
 
 	/**
 	 * Callback will be passed results from contentscript once the validation is complete.
