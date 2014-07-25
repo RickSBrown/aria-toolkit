@@ -191,6 +191,22 @@ describe("ARIA", function() {
 			checkHelper("r1", 0, 0, "checkSupportsAllAttributes");
 		});
 
+		it("checkSupportsAllAttributes aria-required on aria listbox", function() {
+			checkHelper("anElementWithARole", 0, 0, "checkSupportsAllAttributes");
+		});
+
+		it("checkSupportsAllAttributes aria-required on input", function() {
+			checkHelper("ariarequiredoninput", 1, 0, "checkSupportsAllAttributes");//assumes you are runnings tests in an HTML5 browser.
+		});
+
+		it("checkSupportsAllAttributes aria-required on element with no role", function() {
+			checkHelper("ariarequiredondiv", 1, 0, "checkSupportsAllAttributes");
+		});
+
+		it("checkSupportsAllAttributes aria-required on element with a role that does not support it", function() {
+			checkHelper("ariarequiredonunsupportedrole", 1, 0, "checkSupportsAllAttributes");
+		});
+
 		it("checkSupportsAllAttributes on mandatory attribute (not passing role)", function() {
 			checkHelper("r1", 0, 0, "checkSupportsAllAttributes", true);
 		});

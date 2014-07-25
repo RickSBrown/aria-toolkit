@@ -337,6 +337,8 @@
 	function AriaValidator()
 	{
 		var $this = this,
+			elementsThatAllowInputOrSelection = {input:true, select:true, textarea:true},//for the aria-required rules
+			supportsNativeRequiredCache = {},//caching results of supportsNativeRequired for performance reasons (could also be pre-populated to determine result)
 			checkByAttributeQuery ={},//cache the attribute queries once they have been built
 			roleChecks = {//todo, pull experiments out of roleChecks?
 				experiments:[
@@ -378,7 +380,7 @@
 				"widget":true,
 				"window":true};
 
-		/* Making these public so other libraries can conduct more granular validation */
+		/* Making these granular validation routines public so other libraries can utilize */
 		$this.checkAriaOwns = checkAriaOwns;
 		$this.checkContainsRequiredElements = checkContainsRequiredElements;
 		$this.checkInRequiredScope = checkInRequiredScope;
@@ -732,6 +734,15 @@
 						{
 							message = new Message("unsupported attribute: " + next, role, element);
 						}
+						else if("aria-required" === next && isFormElement(element))//darn it a special case... if there are more special cases this should be externalized somehow
+						{
+							if(supportsNativeRequired(element))//in evergreen browsers this will always be true because they all support HTML5 required nowadays
+							{
+								//see also https://www.w3.org/Bugs/Public/show_bug.cgi?id=26416
+								message = new Message("is not allowed when 'an exactly equivalent native attribute is available'", next, element);
+								message.isAttribute = true;
+							}
+						}
 						else
 						{
 							message = new Message("is not supported on this element (see " + buildSpecLink("global_states", true) + ")", next, element);
@@ -739,6 +750,47 @@
 						}
 						result.addFailures(message);
 					}
+				}
+			}
+			return result;
+		}
+
+		/**
+		 * Determine if this is a form elements that requires input or selection by the user.
+		 * @param {Element} element The element to check.
+		 * @return {boolean} true if the element is a form element that requires input or selection.
+		 */
+		function isFormElement(element)
+		{
+			var result = false, tagName = element.tagName;
+			if(tagName)
+			{
+				tagName = tagName.toLowerCase();
+				result = elementsThatAllowInputOrSelection.hasOwnProperty(tagName);
+			}
+			return result;
+		}
+
+		/*
+		 * This checks if the element natively supports "required".
+		 *
+		 * @param {Element} element The element to check.
+		 * @return {boolean} true if the element natively supports required.
+		 */
+		function supportsNativeRequired(element)
+		{
+			var result = false, testElement, tagName = element.tagName;
+			if(tagName)
+			{
+				tagName = tagName.toLowerCase();
+				if(supportsNativeRequiredCache.hasOwnProperty(tagName))
+				{
+					result = supportsNativeRequiredCache[tagName];
+				}
+				else
+				{
+					testElement = document.createElement(tagName);//create a new element in case there are expando attributes or properties on this instance
+					result = supportsNativeRequiredCache[tagName] = ("required" in testElement);
 				}
 			}
 			return result;
