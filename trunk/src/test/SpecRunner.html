@@ -196,7 +196,7 @@
 				3 elements with aria-* attributes and NO role attribute
 				9 elements with role attribute
 			-->
-			<ul id="anElementWithARole" tabindex="-1" aria-expanded="false" role="listbox" style="display: none;">
+			<ul id="anElementWithARole" tabindex="-1" aria-expanded="false" aria-required="true" role="listbox" style="display: none;"><!-- make sure aria-required stays on this -->
 				<li role="option" class="cb_option" tabindex="-1">Alabama</li>
 				<li role="option" class="cb_option" tabindex="-1">Alaska</li>
 				<li role="option" class="cb_option" tabindex="-1">American Samoa</li>
@@ -214,6 +214,9 @@
 				</li>
 			</ul>
 		</div>
+		<input id="ariarequiredoninput" aria-required="true"/>
+		<div id="ariarequiredondiv" aria-required="true"/>
+		<div role="presentation" id="ariarequiredonunsupportedrole" aria-required="true"/>
 	</div>
 </body>
 </html>

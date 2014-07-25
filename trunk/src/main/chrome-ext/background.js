@@ -8,9 +8,9 @@
 		DEFAULT_OPTIONS = {
 			ids: true,
 			experimental: false,
-			ignorerequired: true,
-			requiredxornative: false,
-			requiredandnative: false,
+			//ignorerequired: true,
+			//requiredxornative: false,
+			//requiredandnative: false,
 			attributes: true
 		};
 

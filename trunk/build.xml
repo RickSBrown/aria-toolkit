@@ -2,7 +2,7 @@
 
 	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpath="${basedir}/libs/closure-compiler/compiler.jar"/>
 
-	<property name="enable.debug" value="true"/>
+	<!--<property name="enable.debug" value="true"/>-->
 	<property name="aria.rdf.url" value="xml/aria-1.rdf"/>
 	<property name="src.dir" location="src"/>
 	<property name="build.dir" location="build"/>
