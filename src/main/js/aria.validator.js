@@ -330,12 +330,14 @@
 
 	AriaValidator.call(window.ARIA);//mixin the public API of the AriaValidator to the base ARIA object.
 	/**
+	 * Creates an aria validator with numerous public methods to run checks and find elements of interest.
+	 * TODO move the "find elements of interest" to a separate library since it is not a core part of validation.
 	 * @this ARIA
 	 */
 	function AriaValidator()
 	{
 		var $this = this,
-			checkByAttributeQuery,//cache the attribute query once it has been built once
+			checkByAttributeQuery ={},//cache the attribute queries once they have been built
 			roleChecks = {//todo, pull experiments out of roleChecks?
 				experiments:[
 					checkFirstRule,
@@ -350,7 +352,8 @@
 					checkKnownRole]
 			},
 			attributeChecks = {
-				tests:[checkSupportsAllAttributes]
+				tests:[checkSupportsAllAttributes,
+					checkAriaOwns]
 			},
 			ARIA_ATTR_RE = /^aria\-/,
 			HIGHLY_SEMANTIC_HTML = {//google: aria "strong native semantics"
@@ -375,17 +378,17 @@
 				"widget":true,
 				"window":true};
 
-		/* TEST HOOKS - YEP, MAKING IT PUBLIC JUST FOR UNIT TESTING - THE BENEFIT OUTWEIGHS THE COST */
-		$this._checkAriaOwns = checkAriaOwns;
-		$this._checkContainsRequiredElements = checkContainsRequiredElements;
-		$this._checkInRequiredScope = checkInRequiredScope;
-		$this._checkSupportsAllAttributes = checkSupportsAllAttributes;
-		$this._checkRequiredAttributes = checkRequiredAttributes;
-		$this._checkFirstRule = checkFirstRule;
-		$this._checkSecondRule = checkSecondRule;
-		$this._checkIds = checkIds;
-		$this._checkAbstractRole = checkAbstractRole;
-		$this._checkByAttribute = checkByAttribute;
+		/* Making these public so other libraries can conduct more granular validation */
+		$this.checkAriaOwns = checkAriaOwns;
+		$this.checkContainsRequiredElements = checkContainsRequiredElements;
+		$this.checkInRequiredScope = checkInRequiredScope;
+		$this.checkSupportsAllAttributes = checkSupportsAllAttributes;
+		$this.checkRequiredAttributes = checkRequiredAttributes;
+		$this.checkFirstRule = checkFirstRule;
+		$this.checkSecondRule = checkSecondRule;
+		$this.checkIds = checkIds;
+		$this.checkAbstractRole = checkAbstractRole;
+		$this.checkByAttribute = checkByAttribute;
 
 		/**
 		 * Call ARIA.check to check the correctness of any ARIA roles and attributes used in this DOM.
@@ -395,7 +398,7 @@
 		 * options.experimental - if true run experimental tests
 		 * options.ids - if true check IDs (not a true aria test but critical to aria success)
 		 * @return {Summary[]} A summary of ARIA usage within this document and any frames it contains.
-		 * @example ARIA.check(document.body);
+		 * @example ARIA.check(window);
 		 */
 		$this.check = function(window, options)
 		{
@@ -439,110 +442,89 @@
 			return result;
 		};
 
-		/*
-		 * TOP LEVEL CHECK
+		/**
+		 * Runs role based checks.
+		 * This is a top level check - it runs a number of the more fine grained checks and is ultimately a convenience method.
+		 *
+		 * @param {Element} element The element which scopes the checks.
+		 * @param {Object} options Configuration options - see $this.check.
+		 * @return {Summary} Any failures or warnings.
 		 */
 		function checkByRole(element, options)
 		{
-			var result = new Summary(), role, next, i, elements = element.querySelectorAll("[role]"),
-				lenJ, j, nextJ, tests = roleChecks.tests;
-			if(options && options.experimental)
-			{
-				tests = tests.concat(roleChecks.experiments);
-			}
-			for(i=elements.length-1; i>=0; i--)
-			{
-				next = elements[i];
-				role = getRole(next);
-				if(role)//todo check if hasAttribute role but value is empty
-				{
-					result.addRoles(role);
-					for(j=0, lenJ=tests.length; j<lenJ; j++)
-					{
-						nextJ = tests[j](next, role);
-						if(nextJ)
-						{
-							result.merge(nextJ);
-						}
-					}
-				}
-			}
-			return result;
+			var elements = $this.getElementsWithRole(element);
+			return runChecks(elements, roleChecks, true, options);
 		}
 
-		/*
-		 * TOP LEVEL CHECK
+		/**
+		 * Runs attribute based checks.
+		 * This is a top level check - it runs a number of the more fine grained checks and is ultimately a convenience method.
+		 *
+		 * @param {Element} element The element which scopes the checks.
+		 * @param {Object} options Configuration options - see $this.check.
+		 * @return {Summary} Any failures or warnings.
 		 */
 		function checkByAttribute(element, options)
 		{
-			var next, result = new Summary(), i, nextI,
-				tests = attributeChecks.tests,
-				query = checkByAttributeQuery || (checkByAttributeQuery = buildAttributeQuery()),
-				document = (element.nodeType !== Node.DOCUMENT_NODE ? element.ownerDocument : element),
-				iterator = document.evaluate(query, element, null, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
-			try
+			var elements = $this.getElementsWithAriaAttr(element);
+			return runChecks(elements, attributeChecks, false, options);
+
+		}
+
+		/*
+		 * Helper for top level checks (checkByAttribute, checkByRole)
+		 */
+		function runChecks(elements, checks, usesRole, options)
+		{
+			var result = new Summary(),
+				tests = checks.tests, len = tests.length;
+			if(options && options.experimental && checks.experiments)
 			{
-				while((next = iterator.iterateNext()))
+				tests = tests.concat(checks.experiments);
+			}
+			elements.forEach(function(element){
+				var i, next, role = (usesRole? getRole(element) : null);
+				if(usesRole)
 				{
-					for(i=0; i<tests.length; i++)
+					role = getRole(element);
+					if(role)
 					{
-						nextI = tests[i](next, null);
-						result.merge(nextI);
+						result.addRoles(role);
 					}
 				}
-			}
-			catch(ex)
-			{
-				console.error("Error: Document tree modified during iteration" + ex);
-			}
+				else
+				{
+					role = null;
+				}
+				if(role || !usesRole)
+				{
+					for(i=0; i<len; i++)
+					{
+						next = tests[i](element, role);
+						result.merge(next);
+					}
+				}
+			});
 			return result;
 		}
 
-		/*
-		 * Helper for checkByAttribute.
-		 * Builds an XPath query that selects all nodes with no role with "aria-*" attributes that are not global.
-		 * ./descendant-or-self::node()[not(@role)][@*[starts-with(name(), 'aria-') and not(name()='aria-label' or name()='aria-hidden' or etc etc etc)]]
-		 */
-		function buildAttributeQuery()
-		{
-			var prop,
-				global = $this.getSupported(),
-				predicates = [],
-				result = "./descendant-or-self::node()[not(@role)][@*[starts-with(name(), 'aria-') and not({predicates})]]";
-			for(prop in global)
-			{
-				predicates[predicates.length] = "name()='"+ prop + "'";
-			}
-			result = result.replace(/\{predicates\}/, predicates.join(" or "));
-			return result;
-		}
-
-		/*
-		 * Gets the role from an element.
-		 * TODO why did I think this needed a helper? Kind of pointless.
-		 * @param {Element} element The DOM element whose role we want.
-		 * @return {string} The role of this element, if found.
-		 */
-		function getRole(element)
-		{
-			var result;
-			if(element.getAttribute)
-			{
-				result = element.getAttribute("role");
-			}
-			return result;
-		}
-
-		/*
-		 * EXPERIMENTAL
-		 * This is really difficult to test programatically - allow as optional check
+		/**
+		 * Attempts to check: http://www.w3.org/TR/aria-in-html/#first
+		 * This is EXPERIMENTAL and really difficult to test programatically - probably delete it.
+		 * @param {Element} element A DOM element with an ARIA role.
+		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
+		 * @return {Summary} Any failures or warnings.
+		 * This check is not backed directly by the RDF.
 		 */
 		function checkFirstRule(element, role)
 		{
-			//http://www.w3.org/TR/aria-in-html/#first
-			var result = new Summary(),
-				concepts = $this.getConcept(role, true),
+			var concepts, result = new Summary(),
 				tagName = element.tagName;
+			if(arguments.length === 1)
+			{
+				role = getRole(element);
+			}
+			concepts = $this.getConcept(role, true);
 			if(tagName && concepts && concepts.length)
 			{
 				tagName = tagName.toUpperCase();
@@ -554,15 +536,22 @@
 			return result;
 		}
 
-		/*
-		 * EXPERIMENTAL
-		 * This is really difficult to test programatically - allow as optional check
+		/**
+		 * Attempts to check: http://www.w3.org/TR/aria-in-html/#second
+		 * This is EXPERIMENTAL and really difficult to test programatically - probably delete it.
+		 * @param {Element} element A DOM element with an ARIA role.
+		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
+		 * @return {Summary} Any failures or warnings.
+		 * This check is not backed directly by the RDF.
 		 */
 		function checkSecondRule(element, role)
 		{
-			//http://www.w3.org/TR/aria-in-html/#second
 			var result = new Summary(), tagName = element.tagName;
-			if(tagName)
+			if(arguments.length === 1)
+			{
+				role = getRole(element);
+			}
+			if(tagName && role)
 			{
 				tagName = tagName.toUpperCase();
 				if(HIGHLY_SEMANTIC_HTML.hasOwnProperty(tagName))
@@ -574,10 +563,16 @@
 		}
 
 		/*
-		 * TOP LEVEL CHECK
+		 * Checks IDs within the context of this element. Looks for:
+		 * - Duplicate IDs
+		 * - IDs with illegal characters
 		 * Not strictly speaking an ARIA check however ARIA does depend heavily on IDs being correctly implemented.
-		 * Plus it is a pet hate of mine, duplicate IDs.
-		 * @param {Document} element A document element (node type 9 off the top of my head)
+		 * Plus duplicate IDs are a pet hate of mine.
+		 *
+		 * @param {Element} element The element which scopes the check. This REALLY should be a document element (node type 9),
+		 * it would be stupid to pass in anything else except for unit testing purposes.
+		 *
+		 * TODO assumes HTML5, check doctype and apply rules based on HTML version? But really, who writes HTML4 anymore?
 		 */
 		function checkIds(element)
 		{
@@ -602,14 +597,18 @@
 			return result;
 		}
 
-		/*
-		 * NON-RDF based but solid.
-		 * TODO not really a role check - create a class of attribute checks
-		 * Check the implementation of the "aria-owns" attribute on this element
+		/**
+		 * Check the implementation of the "aria-owns" attribute on this element regardless of whether the element has an ARIA role or not.
 		 * - SHOULD not contain the element it owns
 		 * - MUST not "aria-own" an id that is "aria-owned" somewhere else.
+		 *
+		 * @param {Element} element A DOM element to check.
+		 * @return {Summary} Any failures or warnings.
+		 *
+		 * This check is not founded on the RDF but it is a solid check.
+		 * TODO check that it does not own itself
 		 */
-		function checkAriaOwns(element, role)
+		function checkAriaOwns(element)
 		{
 			var attr="aria-owns", result = new Summary(), i, len, msg, next, nextElement, j, lenJ, nextJ, owners, owned = element.getAttribute(attr);
 			if(owned)
@@ -661,12 +660,20 @@
 			return result;
 		}
 
-		/*
-		 * Another check that cannot be determined by the information in the RDF.
+		/**
+		 * Checks that an element has not implemented an abstract role.
+		 * @param {Element} element A DOM element with an ARIA role.
+		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
+		 * @return {Summary} Any failures or warnings.
+		 * This check is not backed directly by the RDF, the RDF does not mark abstract roles. It is solid as long as the RDF does not change.
 		 */
 		function checkAbstractRole(element, role)
 		{
 			var result = new Summary();
+			if(arguments.length === 1)
+			{
+				role = getRole(element);
+			}
 			if(role && ABSTRACT_ROLES[role] && ABSTRACT_ROLES.hasOwnProperty(role))
 			{
 				result.addFailures(new Message(" Authors MUST NOT use abstract roles in content.", role, element));
@@ -674,9 +681,20 @@
 			return result;
 		}
 
+		/**
+		 * Checks that an element has implemented all states and properties required for its role.
+		 * @param {Element} element A DOM element with an ARIA role.
+		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
+		 * @return {Summary} Any failures or warnings.
+		 */
 		function checkRequiredAttributes(element, role)
 		{
-			var result = new Summary(), prop, supported = $this.getSupported(role);
+			var result = new Summary(), prop, supported;
+			if(arguments.length === 1)
+			{
+				role = getRole(element);
+			}
+			supported = $this.getSupported(role);
 			for(prop in supported)
 			{
 				if(supported[prop] === $this.REQUIRED && !element.hasAttribute(prop))
@@ -688,15 +706,19 @@
 		}
 
 		/*
-		 * Check that all the 'aria-*' attributes on this element are supported.
+		 * Check that all the 'aria-*' attributes on this element are supported regardless of whether the element has an ARIA role or not.
 		 * @param {Element} element The element we are checking for aria-* attributes.
-		 * @param {string} role The role of this element - empty if the element has no role.
-		 * @return {Summary} A summary of issues found.
+		 * @param {string} [role] Optionally provide the element's role or a falsey value if it does not have one (this allows you to optimize performance by minimizing DOM access).
+		 * @return {Summary} Any failures or warnings.
 		 */
 		function checkSupportsAllAttributes(element, role)
 		{
-			var supported = $this.getSupported(role),
-				result = new Summary(), message, i, next, attributes;
+			var supported, result = new Summary(), message, i, next, attributes;
+			if(arguments.length === 1)
+			{
+				role = getRole(element);
+			}
+			supported = $this.getSupported(role);
 			attributes = element.attributes;
 			for(i=attributes.length-1; i>=0; i--)
 			{
@@ -722,12 +744,19 @@
 			return result;
 		}
 
-		/*
-		 * Check that this is a known ARIA role.
+		/**
+		 * Checks that an element has implemented a legitimate aria role.
+		 * @param {Element} element A DOM element with an ARIA role.
+		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
+		 * @return {Summary} Any failures or warnings.
 		 */
 		function checkKnownRole(element, role)
 		{
 			var result = new Summary();
+			if(arguments.length === 1)
+			{
+				role = getRole(element);
+			}
 			if(role && !$this.hasRole(role))
 			{
 				result.addFailures(new Message("role does not exist in ARIA", role, element));
@@ -735,9 +764,21 @@
 			return result;
 		}
 
+		/**
+		 * Checks that this element is in the required scope for its role.
+		 * @param {Element} element A DOM element with an ARIA role.
+		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
+		 * @return {Summary} Any failures or warnings.
+		 */
 		function checkInRequiredScope(element, role)
 		{
-			var next, required = $this.getScope(role), result = new Summary(), passed = !required.length, owner, parent;
+			var next, required, result = new Summary(), passed, owner, parent;
+			if(arguments.length === 1)
+			{
+				role = getRole(element);
+			}
+			required = $this.getScope(role);
+			passed = !required.length;
 			if(!passed)
 			{
 				parent = element;
@@ -777,9 +818,13 @@
 		 */
 		function checkContainsRequiredElements(element, role)
 		{
-			var i, j, required = $this.getMustContain(role), busy,
-				result = new Summary(), owned, next,
-				passed = !required.length;
+			var i, j, required, busy, result = new Summary(), owned, next, passed;
+			if(arguments.length === 1)
+			{
+				role = getRole(element);
+			}
+			required = $this.getMustContain(role);
+			passed = !required.length;
 			if(!passed)
 			{
 				for(i=required.length-1; i>=0; i--)
@@ -884,6 +929,49 @@
 		};
 
 		/**
+		 * Gets all elements with "aria-*" attributes.
+		 * @param {Element} element The scope of the search.
+		 * @param {boolean} [includeRole] If true will also include elements with a "role" attribute.
+		 * By default elements with a role are not included in the result;
+		 * @return {Element[]} An array of elements.
+		 */
+		$this.getElementsWithAriaAttr = function(element, includeRole){
+			var next, result = [], cacheKey = includeRole? "includeRole" : "excludeRole",
+				query = checkByAttributeQuery[cacheKey] || (checkByAttributeQuery[cacheKey] = buildAttributeQuery(includeRole)),
+				document = (element.nodeType !== Node.DOCUMENT_NODE ? element.ownerDocument : element),
+				iterator = document.evaluate(query, element, null, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
+			try
+			{
+				while((next = iterator.iterateNext()))
+				{
+					result[result.length] = next;
+				}
+			}
+			catch(ex)
+			{
+				console.error("Error: Document tree modified during iteration" + ex);
+			}
+			return result;
+		};
+
+		/**
+		 * Gets all elements with a "role" attribute.
+		 * @param {Element} element The scope of the search, only this element's subtree will be searched.
+		 * @return {Element[]} An array of elements.
+		 */
+		$this.getElementsWithRole = function(element){
+			var i, len, elements = element.querySelectorAll("[role]"), result = [];
+			if(result)
+			{
+				for(i=0, len = elements.length; i<len; i++)
+				{
+					result[i] = elements[i];
+				}
+			}
+			return result;
+		};
+
+		/**
 		 * Convert a space separated list of IDs to an array of IDs.
 		 * @param {string} val A space separated list of IDs
 		 * @returns {string[]} An array of the IDs in 'val'.
@@ -899,6 +987,46 @@
 			{
 				result = [];
 			}
+			return result;
+		}
+
+		/*
+		 * Gets the role from an element.
+		 * TODO why did I think this needed a helper? Kind of pointless.
+		 * @param {Element} element The DOM element whose role we want.
+		 * @return {string} The role of this element, if found.
+		 */
+		function getRole(element)
+		{
+			var result;
+			if(element.getAttribute)
+			{
+				result = element.getAttribute("role");
+			}
+			return result;
+		}
+
+		/*
+		 * Helper for getElementsWithAriaAttr.
+		 * Builds an XPath query that selects all nodes with no role with "aria-*" attributes that are not global.
+		 * ./descendant-or-self::node()[not(@role)][@*[starts-with(name(), 'aria-') and not(name()='aria-label' or name()='aria-hidden' or etc etc etc)]]
+		 */
+		function buildAttributeQuery(includeRole)
+		{
+			var prop,
+				global = $this.getSupported(),
+				predicates = [],
+				result = "./descendant-or-self::node()";
+			if(!includeRole)
+			{
+				result += "[not(@role)]";
+			}
+			result += "[@*[starts-with(name(), 'aria-') and not({predicates})]]";
+			for(prop in global)
+			{
+				predicates[predicates.length] = "name()='"+ prop + "'";
+			}
+			result = result.replace(/\{predicates\}/, predicates.join(" or "));
 			return result;
 		}
 	}
