@@ -131,104 +131,140 @@ describe("ARIA", function() {
 	(function(){
 		var validator = window.ARIA;
 
-		it("_checkAriaOwns on an element with no aria-owns should not report any problems", function() {
+		it("checkAriaOwns on an element with no aria-owns should not report any problems", function() {
 			checkHelper("fileMenu",0 ,0);
 		});
 
-		it("_checkAriaOwns an element with strange characters in ID should not throw exception", function() {
+		it("checkAriaOwns on an element with no aria-owns should not report any problems (not passing role)", function() {
+			checkHelper("fileMenu", 0, 0, "", true);
+		});
+
+		it("checkAriaOwns an element with strange characters in ID should not throw exception", function() {
 			checkHelper("ariaOwnsStrangeChars",0 ,0);
 		});
 
-		it("_checkAriaOwns on an element with correctly implemented aria-owns should not report any problems", function() {
+		it("checkAriaOwns on an element with correctly implemented aria-owns should not report any problems", function() {
 			checkHelper("cb1-edit",0 ,0);
 		});
 
-		it("_checkAriaOwns on an element which is part of a duplicate own", function() {
+		it("checkAriaOwns on an element which is part of a duplicate own", function() {
 			checkHelper("ownDuplicated",1 ,0);
 		});
 
-		it("_checkAriaOwns on an element which is nested in the DOM", function() {
+		it("checkAriaOwns on an element which is nested in the DOM", function() {
 			checkHelper("ownNested", 0, 1);
 		});
 
-		it("_checkContainsRequiredElements with multiple required and aria-owns", function() {
-			checkHelper("cb1-edit", 0, 0, "_checkContainsRequiredElements");
+		it("checkContainsRequiredElements with multiple required and aria-owns", function() {
+			checkHelper("cb1-edit", 0, 0, "checkContainsRequiredElements");
 		});
 
-		it("_checkContainsRequiredElements with single required and dom owns", function() {
-			checkHelper("rg1", 0, 0, "_checkContainsRequiredElements");
+		it("checkContainsRequiredElements with multiple required and aria-owns (not passing role)", function() {
+			checkHelper("cb1-edit", 0, 0, "checkContainsRequiredElements", true);
 		});
 
-		it("_checkContainsRequiredElements with single required and dom owns and missing required nodes", function() {
-			checkHelper("rg2", 1, 0, "_checkContainsRequiredElements");
+		it("checkContainsRequiredElements with single required and dom owns", function() {
+			checkHelper("rg1", 0, 0, "checkContainsRequiredElements");
 		});
 
-		it("_checkInRequiredScope with single required and dom owns", function() {
-			checkHelper("cb1-opt1", 0, 0, "_checkInRequiredScope");
+		it("checkContainsRequiredElements with single required and dom owns and missing required nodes", function() {
+			checkHelper("rg2", 1, 0, "checkContainsRequiredElements");
 		});
 
-		it("_checkInRequiredScope with multiple required and dom owns", function() {
-			checkHelper("menuitem1", 0, 0, "_checkInRequiredScope");
+		it("checkInRequiredScope with single required and dom owns", function() {
+			checkHelper("cb1-opt1", 0, 0, "checkInRequiredScope");
 		});
 
-		it("_checkInRequiredScope not in correct scope", function() {
-			checkHelper("menuitemFail", 1, 0, "_checkInRequiredScope");
+		it("checkInRequiredScope with single required and dom owns (not passing role)", function() {
+			checkHelper("cb1-opt1", 0, 0, "checkInRequiredScope", true);
 		});
 
-		it("_checkSupportsAllAttributes on mandatory attribute", function() {
-			checkHelper("r1", 0, 0, "_checkSupportsAllAttributes");
+		it("checkInRequiredScope with multiple required and dom owns", function() {
+			checkHelper("menuitem1", 0, 0, "checkInRequiredScope");
 		});
 
-		it("_checkSupportsAllAttributes on global attribute", function() {
-			checkHelper("rg1", 0, 0, "_checkSupportsAllAttributes");
+		it("checkInRequiredScope not in correct scope", function() {
+			checkHelper("menuitemFail", 1, 0, "checkInRequiredScope");
 		});
 
-		it("_checkSupportsAllAttributes on unsupported attribute", function() {
-			checkHelper("menubar1", 1, 0, "_checkSupportsAllAttributes");
+		it("checkSupportsAllAttributes on mandatory attribute", function() {
+			checkHelper("r1", 0, 0, "checkSupportsAllAttributes");
 		});
 
-		it("_checkRequiredAttributes on mandatory attribute", function() {
-			checkHelper("r1", 0, 0, "_checkRequiredAttributes");
+		it("checkSupportsAllAttributes on mandatory attribute (not passing role)", function() {
+			checkHelper("r1", 0, 0, "checkSupportsAllAttributes", true);
 		});
 
-		it("_checkRequiredAttributes on missing mandatory attribute", function() {
-			checkHelper("checkbox1", 1, 0, "_checkRequiredAttributes");
+		it("checkSupportsAllAttributes on global attribute", function() {
+			checkHelper("rg1", 0, 0, "checkSupportsAllAttributes");
 		});
 
-		it("_checkFirstRule on option with option role", function() {
-			checkHelper("badOpt", 0, 1, "_checkFirstRule");
+		it("checkSupportsAllAttributes on unsupported attribute", function() {
+			checkHelper("menubar1", 1, 0, "checkSupportsAllAttributes");
 		});
 
-		it("_checkFirstRule on li with radio role", function() {
-			checkHelper("r1", 0, 0, "_checkFirstRule");
+		it("checkRequiredAttributes on mandatory attribute", function() {
+			checkHelper("r1", 0, 0, "checkRequiredAttributes");
 		});
 
-		it("_checkSecondRule on heading with role", function() {
-			checkHelper("badHeading", 0, 1, "_checkSecondRule");
+		it("checkRequiredAttributes on mandatory attribute (not passing role)", function() {
+			checkHelper("r1", 0, 0, "checkRequiredAttributes", true);
 		});
 
-		it("_checkIds on subtree with no duplicates", function(){
-			checkHelper("cb1-list", 0, 0, "_checkIds");
+		it("checkRequiredAttributes on missing mandatory attribute", function() {
+			checkHelper("checkbox1", 1, 0, "checkRequiredAttributes");
 		});
 
-		it("_checkIds on subtree with duplicates", function(){
-			checkHelper("hasDuplicateIds", 1, 0, "_checkIds");
+		it("checkFirstRule on option with option role", function() {
+			checkHelper("badOpt", 0, 1, "checkFirstRule");
 		});
 
-		it("_checkIds on id with spaces", function(){
-			checkHelper("idCheckSpace", 1, 0, "_checkIds");
+		it("checkFirstRule on option with option role (not passing role)", function() {
+			checkHelper("badOpt", 0, 1, "checkFirstRule", true);
 		});
 
-		it("_checkIds on document with issues", function(){
-			checkHelper(document, 2, 0, "_checkIds");
+		it("checkFirstRule on li with radio role", function() {
+			checkHelper("r1", 0, 0, "checkFirstRule");
 		});
 
-		it("_checkAbstractRole on an element with an abstract role", function(){
-			checkHelper("abstractRoleUsed", 1, 0, "_checkAbstractRole");
+		it("checkSecondRule on heading with role", function() {
+			checkHelper("badHeading", 0, 1, "checkSecondRule");
 		});
 
-		it("_checkAbstractRole on an element with a widget role", function(){
-			checkHelper("menuitem1", 0, 0, "_checkAbstractRole");
+		it("checkSecondRule on heading with role (not passing role)", function() {
+			checkHelper("badHeading", 0, 1, "checkSecondRule", true);
+		});
+
+		it("checkIds on subtree with no duplicates", function(){
+			checkHelper("cb1-list", 0, 0, "checkIds");
+		});
+
+		it("checkIds on subtree with no duplicates (not passing role)", function(){
+			checkHelper("cb1-list", 0, 0, "checkIds", true);
+		});
+
+		it("checkIds on subtree with duplicates", function(){
+			checkHelper("hasDuplicateIds", 1, 0, "checkIds");
+		});
+
+		it("checkIds on id with spaces", function(){
+			checkHelper("idCheckSpace", 1, 0, "checkIds");
+		});
+
+		it("checkIds on document with issues", function(){
+			checkHelper(document, 2, 0, "checkIds");
+		});
+
+		it("checkAbstractRole on an element with an abstract role", function(){
+			checkHelper("abstractRoleUsed", 1, 0, "checkAbstractRole");
+		});
+
+		it("checkAbstractRole on an element with an abstract role (not passing role)", function(){
+			checkHelper("abstractRoleUsed", 1, 0, "checkAbstractRole", true);
+		});
+
+		it("checkAbstractRole on an element with a widget role", function(){
+			checkHelper("menuitem1", 0, 0, "checkAbstractRole");
 		});
 
 		(function(){
@@ -248,7 +284,7 @@ describe("ARIA", function() {
 					{id:"mixedAttrsAndRole", fail:0, warn:0},
 					{id:"mixedAttrsAndInvalidRoles", fail:0, warn:0}
 				],
-				funcName = "_checkByAttribute";
+				funcName = "checkByAttribute";
 			attrChecks.forEach(function(check){
 				if(!check.nocount)
 				{
@@ -258,23 +294,71 @@ describe("ARIA", function() {
 				it(funcName + " on element " + check.id, function(){
 					checkHelper(check.id, check.fail, check.warn, funcName);
 				});
+				it(funcName + " on element " + check.id + " not passing role", function(){
+					checkHelper(check.id, check.fail, check.warn, funcName, true);
+				});
 			});
-			it(funcName + " on element " + "attributeCheckTree", function(){
+			it(funcName + " on element attributeCheckTree passing role", function(){
 				checkHelper("attributeCheckTree", failCountTotal, warnCountTotal, funcName);
 			});
-
+			it(funcName + " on element attributeCheckTree not passing role", function(){
+				checkHelper("attributeCheckTree", failCountTotal, warnCountTotal, funcName, true);
+			});
 		})();
 
-		function checkHelper(id, failCount, warnCount, funcName)
+		function checkHelper(id, failCount, warnCount, funcName, excludeRole)
 		{
-			var method = funcName || "_checkAriaOwns",
+			var method = funcName || "checkAriaOwns",
 				element = id.constructor === String? document.getElementById(id) : id,
-				result = validator[method](element, element.nodeType === Node.ELEMENT_NODE? element.getAttribute("role") : ""),
-				warnings = result.getWarnings(),
-				failures = result.getFailures();
+				result,
+				warnings,
+				failures;
+			if(excludeRole)
+			{
+				result = validator[method](element, element.nodeType === Node.ELEMENT_NODE? element.getAttribute("role") : "");
+			}
+			else
+			{
+				result = validator[method](element);
+			}
+			warnings = result.getWarnings();
+			failures = result.getFailures();
 			expect(warnings.length).toEqual(warnCount);
 			expect(failures.length).toEqual(failCount);
 		}
+	})();
+
+	/* HELPER TESTS */
+	(function(){
+		//todo tests for getOwner and getOwned (though these are covered indirectly by other tests)
+
+		elementsWithRoleHelper("roleCountContainer", 9);
+		elementsWithRoleHelper("cb1-opt1", 0);//an element with a role does not return self
+		elementsWithRoleHelper("anElementWithARole", 4);//an element with a role does not return self
+		elementsWithRoleHelper("hasDuplicateIds", 0);
+		elementsWithAriaAttrHelper("roleCountContainer", true, 4);
+		elementsWithAriaAttrHelper("roleCountContainer", false, 3);
+		elementsWithAriaAttrHelper("hasDuplicateIds", true, 0);
+		elementsWithAriaAttrHelper("hasDuplicateIds", false, 0);
+
+		function elementsWithAriaAttrHelper(id, inclusive, expectedLen)
+		{
+			it("getElementsWithAriaAttr " + (inclusive? "inclusive" : "exclusive") + " on '" + id + "' should return " + expectedLen + " elements", function() {
+				var element = document.getElementById(id),
+					actual = ARIA.getElementsWithAriaAttr(element, inclusive);
+				expect(actual.length).toEqual(expectedLen);
+			});
+		}
+
+		function elementsWithRoleHelper(id, expectedLen)
+		{
+			it("getElementsWithRole on '" + id + "' should return " + expectedLen + " elements", function() {
+				var element = document.getElementById(id),
+					actual = ARIA.getElementsWithRole(element);
+				expect(actual.length).toEqual(expectedLen);
+			});
+		}
+
 	})();
 
 });

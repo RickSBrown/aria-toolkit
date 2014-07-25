@@ -100,7 +100,7 @@
 			</button>
 
 			<ul id="cb1-list" class="cb_list" tabindex="-1" aria-expanded="false" role="listbox" style="display: none;">
-				<li id="cb1-opt1" role="option" class="cb_option" tabindex="-1">Alabama</li>
+				<li id="cb1-opt1" role="option" class="cb_option" tabindex="-1">Alabama</li><!-- Do not put anything with a role inside this element -->
 				<li id="cb1-opt2" role="option" class="cb_option" tabindex="-1">Alaska</li>
 				<li id="cb1-opt3" role="option" class="cb_option" tabindex="-1">American Samoa</li>
 				<li id="cb1-opt4" role="option" class="cb_option" tabindex="-1">Arizona</li>
@@ -181,7 +181,7 @@
 				<li role="option" class="cb_option" tabindex="-1">Arizona</li>
 			</ul>
 		</div>
-		<div id="hasDuplicateIds">
+		<div id="hasDuplicateIds"><!-- Don't put any elements with role or aria-* attributes in here -->
 			<span id="duplicateId"></span>
 			<span id="duplicateId"></span>
 		</div>
@@ -189,6 +189,31 @@
 			<span id="id withSpace"></span>
 		</div>
 		<div role="window" id="abstractRoleUsed"><!-- Deliberate use of an abstract role --></div>
+		<div id="roleCountContainer">
+			<!--
+				In this scope there are:
+				4 elements with aria-* attributes
+				3 elements with aria-* attributes and NO role attribute
+				9 elements with role attribute
+			-->
+			<ul id="anElementWithARole" tabindex="-1" aria-expanded="false" role="listbox" style="display: none;">
+				<li role="option" class="cb_option" tabindex="-1">Alabama</li>
+				<li role="option" class="cb_option" tabindex="-1">Alaska</li>
+				<li role="option" class="cb_option" tabindex="-1">American Samoa</li>
+				<li role="option" class="cb_option" tabindex="-1">Arizona</li>
+			</ul>
+			<ul role="radiogroup">
+				<li tabindex="-1" aria-checked="false">
+					<img role="presentation" src="radio-unchecked.gif" />
+				</li>
+				<li  tabindex="-1" aria-checked="false">
+					<img role="presentation" src="radio-unchecked.gif" />
+				</li>
+				<li tabindex="0" aria-checked="true">
+					<img role="presentation" src="radio-checked.gif" />
+				</li>
+			</ul>
+		</div>
 	</div>
 </body>
 </html>
