@@ -1,45 +1,80 @@
 <project basedir="." default="dist">
 
-	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpath="${basedir}/libs/closure-compiler/compiler.jar"/>
-
 	<!--<property name="enable.debug" value="true"/>-->
 	<property name="aria.rdf.url" value="xml/aria-1.rdf"/>
 	<property name="src.dir" location="src"/>
 	<property name="build.dir" location="build"/>
+	<property name="build.js.dir" location="${build.dir}/js"/>
+	<property name="build.js.debug.dir" location="${build.dir}/js_debug"/>
 	<property name="dist.dir" location="dist"/>
 	<property name="test.build.dir" location="${build.dir}"/>
 	<property name="build.version" value="0.7"/>
 	<property name="chrome-ext-dir-name" value="chrome-ext"/>
 	<property name="lib.dir" location="${basedir}/libs"/>
 	<property name="batik" value="batik-1.7"/>
+	<property name="js.src.dir" location="${src.dir}/main/js"/>
+	<property name="closure.jar" value="${basedir}/libs/closure-compiler/compiler.jar" />
+	<property name="jsdoc.home" location="${build.dir}/jsdoc-master"/>
+	<property name="rhino.jar" location="${jsdoc.home}/rhino/js.jar"/>
+
+	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpath="${basedir}/libs/closure-compiler/compiler.jar"/>
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+		<classpath>
+			<pathelement location="${lib.dir}/ant-contrib/ant-contrib-0.6.jar"/>
+		</classpath>
+	</taskdef>
+
 
 	<target name="clean">
 		<delete dir="${build.dir}"/>
+		<delete dir="${dist.dir}"/>
 	</target>
 
-	<target name="build" depends="clean">
-		<mkdir dir="${build.dir}/js"/>
+	<target name="init" depends="clean">
+		<unzip src="${lib.dir}/jsdoc/jsdoc-master.zip" dest="${build.dir}"/>
+		<mkdir dir="${build.js.dir}"/>
+		<mkdir dir="${build.js.debug.dir}"/>
 		<mkdir dir="${build.dir}/xml"/>
-		<concat destfile="${build.dir}/js/aria-${build.version}-debug.js" fixlastline="true">
-			<header>
-				<![CDATA[
-/**
- * ARIA-js
- * Copyright 2014, Rick Brown
- */
-(function(){"use strict";
-var scope = this || window;
-scope.ARIA = new ARIA({query:query, loadXml:loadXml, url: "${aria.rdf.url}"});
-scope = null;
-				]]>
-			</header>
-			<footer>})();</footer>
-			<fileset dir="${src.dir}/main/js" includes="*.js" excludes="*.validator.js"/>
-		</concat>
+	</target>
+
+	<!--
+		This builds all of the individual modules.
+	-->
+	<target name="buildDebug" depends="init">
 		<xslt style="${src.dir}/main/xslt/aria-minifier.xsl" in="${lib.dir}/aria/aria-1.rdf" out="${build.dir}/xml/aria-1.rdf"/>
-		<copy file="${src.dir}/main/js/aria.validator.js" tofile="${build.dir}/js/aria.validator-${build.version}-debug.js"/>
 		<copy file="LICENSE" todir="${build.dir}"/>
 		<copy file="README" todir="${build.dir}"/>
+		<copy todir="${build.js.debug.dir}">
+			<fileset dir="${js.src.dir}">
+				<include name="**/*.js"/>
+			</fileset>
+			<filterchain>
+				<expandproperties />
+			</filterchain>
+		</copy>
+	</target>
+
+	<!--
+		This builds all of the individual modules AND the layer files for both the core aria functionality and the validator.
+	-->
+	<target name="build" depends="init, buildDebug">
+		<copy todir="${build.dir}">
+			<fileset dir="${basedir}">
+				<include name="LICENSE"/>
+				<include name="README"/>
+			</fileset>
+			<filterchain>
+				<expandproperties />
+			</filterchain>
+		</copy>
+		<property name="r.js" value="${lib.dir}/requirejs/r.js" />
+		<optimize settingsFile="${basedir}/build-aria.js"/>
+		<optimize settingsFile="${basedir}/build-validator.js"/>
+		<foreach target="compile" param="next.js.source.file">
+			<fileset dir="${build.js.debug.dir}" casesensitive="yes">
+				<include name="**/*.js"/>
+			</fileset>
+		</foreach>
 	</target>
 
 	<target name="buildChromeExt" depends="dist, initChromeExt, debugChromeExt, compileChromeExt">
@@ -49,18 +84,17 @@ scope = null;
 		<zip destfile="${dist.dir}/aria-validator-chrome-${build.version}.zip" basedir="${chromeExtDistDir}"/>
 	</target>
 
-	<target name="initChromeExt">
+	<target name="initChromeExt" depends="build">
 		<property name="validator.app.name" value="ARIA Validator"/>
 		<property name="chromeExtDistDir" location="${build.dir}/${chrome-ext-dir-name}"/>
 		<unzip src="${lib.dir}/batik/${batik}.zip" dest="${build.dir}"/>
 		<mkdir dir="${chromeExtDistDir}"/>
-		<fileset dir="${src.dir}/main/js" includes="*.js" excludes="*.validator.js"/>
 		<copy todir="${chromeExtDistDir}">
 			<fileset dir="${build.dir}">
 				<exclude name="${batik}/**"/>
-				<exclude name="**/*-debug.js"/>
+				<!--<exclude name="js_debug/**"/>-->
 				<include name="**/*.rdf"/>
-				<include name="**/*.js"/>
+				<include name="js/aria-validator-layer.js"/>
 			</fileset>
 		</copy>
 		<copy todir="${chromeExtDistDir}">
@@ -118,6 +152,13 @@ scope = null;
 
 	<target name="test" depends="dist" description="Build tests for the project">
 		<mkdir dir="${test.build.dir}"/>
+		<if>
+			<isset property="enable.debug"/>
+			<then>
+				<property name="js.test.dir" value="js_debug"/>
+			</then>
+		</if>
+		<property name="js.test.dir" value="js"/>
 		<unzip src="${lib.dir}/jasmine/jasmine-standalone-2.0.0.zip" dest="${test.build.dir}">
 			<patternset>
 				<include name="lib/"/>
@@ -137,10 +178,25 @@ scope = null;
 		<echo>********</echo>
 	</target>
 
-	<target name="dist" depends="build, debug, compile" description="Builds the tarball for distribution">
+	<target name="dist" depends="build, debug" description="Builds the tarball for distribution">
 		<mkdir dir="${dist.dir}"/>
 		<tar destfile="${dist.dir}/aria-toolkit-${build.version}.tar" basedir="${build.dir}"/>
 		<!--gzip destfile="${dist.dir}/aria-toolkit.tar.gz" src="${dist.dir}/aria-toolkit-${build.version}.tar"/-->
+	</target>
+
+	<target name="buildDoco">
+		<!--
+		jsdoc.home - the location of your jsdoc3 installation
+		jsdoc3-task-jar - the location of the task jar that was build above
+		rhino.jar - the location of the rhino jar
+		-->
+		<unzip src="${lib.dir}/jsdoc/jsdoc-master.zip" dest="${build.dir}"/>
+		<property name="jsdoc.home" location="${build.dir}/jsdoc-master"/>
+		<property name="jsdoc3-task-jar" location="${lib.dir}/jsdoc/jsdoc3-ant-task-1.0.jar"/>
+
+		<!--<property name="rhino.jar" location="${lib.dir}/jsdoc/js-1.7r3_jsdoc.jar"/>-->
+		<taskdef name="jsdoc" classname="net.jannon.ant.tasks.JsDoc3" classpath="${jsdoc3-task-jar}:${rhino.jar}"/>
+		<jsdoc jsdochome="${jsdoc.home}" to="${build.dir}/docs" dir="${js.src.dir}" />
 	</target>
 
 	<target name="debug" if="enable.debug">
@@ -152,15 +208,12 @@ scope = null;
 		</copy>
 	</target>
 
-	<target name="compile" unless="enable.debug">
-		<jscomp compilationLevel="simple" debug="false" output="${build.dir}/js/aria-${build.version}.js">
-			<sources dir="${build.dir}/js">
-				<file name="aria-${build.version}-debug.js"/>
-			</sources>
-		</jscomp>
-		<jscomp compilationLevel="simple" debug="false" output="${build.dir}/js/aria.validator-${build.version}.js">
-			<sources dir="${build.dir}/js">
-				<file name="aria.validator-${build.version}-debug.js"/>
+	<target name="compile">
+		<local name="fileName"/>
+		<basename property="fileName" file="${next.js.source.file}"/>
+		<jscomp compilationLevel="simple" debug="false" output="${build.js.dir}/${fileName}">
+			<sources dir="${build.js.debug.dir}">
+				<file name="${fileName}"/>
 			</sources>
 		</jscomp>
 	</target>
@@ -183,6 +236,22 @@ scope = null;
 				<arg value="-scriptSecurityOff"/>
 				<arg value="@{src}"/>
 			</java>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="optimize">
+		<attribute name="settingsFile"/>
+		<sequential>
+			<java classname="org.mozilla.javascript.tools.shell.Main" failonerror="true">
+				<classpath>
+					<pathelement location="${rhino.jar}" />
+					<pathelement location="${closure.jar}" />
+				</classpath>
+				<arg value="${r.js}"/>
+				<arg value="-o"/>
+				<arg value="@{settingsFile}"/>
+			</java>
+			<echo message="optimized @{settingsFile}" />
 		</sequential>
 	</macrodef>
 </project>
