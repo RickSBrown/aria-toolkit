@@ -18,7 +18,6 @@
 
 	function updateOptions(obj)
 	{
-		console.log("options", obj);
 		options = obj;
 	}
 
@@ -65,7 +64,8 @@
 				rdfDom = parser.parseFromString(rdf, "text/xml");
 				scope.ARIA.setRdf(rdfDom);
 			}
-			summary = scope.ARIA.check(window, options);
+			scope.ARIA.setValidatorOptions(options);
+			summary = scope.ARIA.check(window);
 			if(summary && summary.length)
 			{
 				summary.forEach(function(next){
