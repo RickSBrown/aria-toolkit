@@ -379,7 +379,8 @@ require(["aria"], function(aria){
 					"select":true,
 					"structure":true,
 					"widget":true,
-					"window":true};
+					"window":true},
+				options = {};
 
 			/* Making these granular validation routines public so other libraries can utilize */
 			$this.checkAriaOwns = checkAriaOwns;
@@ -392,18 +393,28 @@ require(["aria"], function(aria){
 			$this.checkIds = checkIds;
 			$this.checkAbstractRole = checkAbstractRole;
 			$this.checkByAttribute = checkByAttribute;
+			
+			/**
+			 * Validator configuration options.
+			 * @param {Object} opts Configuration options, as documented below:
+			 * opts.attributes - if true run checks
+			 * opts.experimental - if true run experimental tests
+			 * opts.ids - if true check IDs (not a true aria test but critical to aria success)
+			 */
+			$this.setValidatorOptions = function(opts){
+				if(opts)
+				{
+					options = opts;
+				}
+			};
 
 			/**
 			 * Call ARIA.check to check the correctness of any ARIA roles and attributes used in this DOM.
 			 * @param {Window} window The browser window.
-			 * @param {Object} [options] Configuration options, as documented below:
-			 * options.attributes - if true run checks
-			 * options.experimental - if true run experimental tests
-			 * options.ids - if true check IDs (not a true aria test but critical to aria success)
 			 * @return {Summary[]} A summary of ARIA usage within this document and any frames it contains.
 			 * @example ARIA.check(window);
 			 */
-			$this.check = function(window, options)
+			$this.check = function(window)
 			{
 				var result = [], document, body, frames, i, next, frameSummary, attributeResult;
 				if(window && ((document = window.document) && (body = document.body)))
@@ -429,7 +440,7 @@ require(["aria"], function(aria){
 					{
 						try
 						{
-							frameSummary = $this.check(frames[i], options);
+							frameSummary = $this.check(frames[i]);
 							if(frameSummary && frameSummary.length)
 							{
 								result = result.concat(frameSummary);
@@ -450,13 +461,12 @@ require(["aria"], function(aria){
 			 * This is a top level check - it runs a number of the more fine grained checks and is ultimately a convenience method.
 			 *
 			 * @param {Element} element The element which scopes the checks.
-			 * @param {Object} options Configuration options - see $this.check.
 			 * @return {Summary} Any failures or warnings.
 			 */
-			function checkByRole(element, options)
+			function checkByRole(element)
 			{
 				var elements = $this.getElementsWithRole(element);
-				return runChecks(elements, roleChecks, true, options);
+				return runChecks(elements, roleChecks, true);
 			}
 
 			/**
@@ -464,20 +474,19 @@ require(["aria"], function(aria){
 			 * This is a top level check - it runs a number of the more fine grained checks and is ultimately a convenience method.
 			 *
 			 * @param {Element} element The element which scopes the checks.
-			 * @param {Object} options Configuration options - see $this.check.
 			 * @return {Summary} Any failures or warnings.
 			 */
-			function checkByAttribute(element, options)
+			function checkByAttribute(element)
 			{
 				var elements = $this.getElementsWithAriaAttr(element);
-				return runChecks(elements, attributeChecks, false, options);
+				return runChecks(elements, attributeChecks, false);
 
 			}
 
 			/*
 			 * Helper for top level checks (checkByAttribute, checkByRole)
 			 */
-			function runChecks(elements, checks, usesRole, options)
+			function runChecks(elements, checks, usesRole)
 			{
 				var result = new Summary(),
 					tests = checks.tests, len = tests.length;
