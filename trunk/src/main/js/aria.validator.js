@@ -1,4 +1,4 @@
-require(["aria"], function(aria){
+require(["aria", "xpath"], function(aria, xpathQuery){
 	/**
 	 * This file provides functionality to validate the DOM to ensure that:
 	 * - Elements with ARIA roles are in the correct scope
@@ -10,28 +10,31 @@ require(["aria"], function(aria){
 	 * Copyright (C) 2014  Rick Brown
 	 */
 	(function(){
-
+		var ROLE_RE =/^[a-z]+$/ ;
 		/**
 		 * Builds the HTML to link back to the relevant ARIA spec at w3.org.
 		 *
 		 * @param {string} name The name of the aria attribute in question.
-		 * @param {boolean} [attr] If true this aria attribute is a state or a property, otherwise it's a role.
 		 * @return {string} HTML markup for a link to the relevant spec.
 		 */
-		function buildSpecLink(name, attr)
+		function buildSpecLink(name)
 		{
 			var html;
-			if(attr)
+			if(name && (name = name.trim()))//TODO validate that it's a genuine target in the spec?
 			{
-				html = '<a target="_blank" href="http://www.w3.org/TR/wai-aria/states_and_properties#{name}">{name}</a>';
+				if(ROLE_RE.test(name))
+				{
+					html = '<a target="_blank" href="http://www.w3.org/TR/wai-aria/roles#{name}">{name}</a>';
+				}
+				else
+				{
+					html = '<a target="_blank" href="http://www.w3.org/TR/wai-aria/states_and_properties#{name}">{name}</a>';
+				}
+				html = html.replace(/\{name\}/g, name);
 			}
 			else
 			{
-				html = '<a target="_blank" href="http://www.w3.org/TR/wai-aria/roles#{name}">{name}</a>';
-			}
-			if(name)//TODO validate that it's a genuine target in the spec?
-			{
-				html = html.replace(/\{name\}/g, name);
+				html="";
 			}
 			return html;
 		}
@@ -40,7 +43,7 @@ require(["aria"], function(aria){
 			var source = elementToSource(this.element), result = ["<details><summary>"];
 			if(this.role)
 			{
-				result[result.length] = buildSpecLink(this.role, this.isAttribute);
+				result[result.length] = buildSpecLink(this.role);
 				result[result.length] = " ";
 			}
 			result[result.length] = this.msg;
@@ -95,7 +98,6 @@ require(["aria"], function(aria){
 			this.msg = msg;
 			this.role = name;
 			this.element = element;
-			this.isAttribute = false;
 		}
 
 		Summary.addUnique = function(instance, name, value){
@@ -645,7 +647,6 @@ require(["aria"], function(aria){
 									if(nextJ.compareDocumentPosition(nextElement) & Node.DOCUMENT_POSITION_CONTAINED_BY)
 									{
 										msg = new Message(" should not be used if the relationship is represented in the DOM: ", attr, element);
-										msg.isAttribute = true;
 										result.addWarnings(msg);
 									}
 								}
@@ -653,13 +654,11 @@ require(["aria"], function(aria){
 							else
 							{
 								msg = new Message(" references an element that is not present in the DOM: ", attr, next);
-								msg.isAttribute = true;
 								result.addWarnings(msg);
 							}
 							if(lenJ > 1)
 							{
 								msg = new Message(" IDREF must not be owned by more than one element: " + next, attr, owners);
-								msg.isAttribute = true;
 								result.addFailures(msg);
 							}
 						}
@@ -750,13 +749,11 @@ require(["aria"], function(aria){
 								{
 									//see also https://www.w3.org/Bugs/Public/show_bug.cgi?id=26416
 									message = new Message("is not allowed when 'an exactly equivalent native attribute is available'", next, element);
-									message.isAttribute = true;
 								}
 							}
 							else
 							{
 								message = new Message("is not supported on this element (see " + buildSpecLink("global_states", true) + ")", next, element);
-								message.isAttribute = true;
 							}
 							result.addFailures(message);
 						}
@@ -998,23 +995,59 @@ require(["aria"], function(aria){
 			 * @return {Element[]} An array of elements.
 			 */
 			$this.getElementsWithAriaAttr = function(element, includeRole){
-				var next, result = [], cacheKey = includeRole? "includeRole" : "excludeRole",
-					query = checkByAttributeQuery[cacheKey] || (checkByAttributeQuery[cacheKey] = buildAttributeQuery(includeRole)),
-					document = (element.nodeType !== Node.DOCUMENT_NODE ? element.ownerDocument : element),
-					iterator = document.evaluate(query, element, null, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
-				try
+				var result, cacheKey = includeRole? "includeRole" : "excludeRole",
+					query = checkByAttributeQuery[cacheKey] || (checkByAttributeQuery[cacheKey] = buildAttributeQuery(includeRole));
+				if(document.evaluate)
 				{
-					while((next = iterator.iterateNext()))
-					{
-						result[result.length] = next;
-					}
+					result = xpathQuery(query, false, element);
 				}
-				catch(ex)
+				else
 				{
-					console.error("Error: Document tree modified during iteration" + ex);
+					result = getElementsWithAriaAttrLame(element, includeRole);
 				}
 				return result;
 			};
+			
+			/**
+			 * For browsers that do not support XPath on HTML DOM use an alternate (probably slower) method.
+			 * @param {Element} element The scope of the search.
+			 * @param {boolean} [includeRole] If true will also include elements with a "role" attribute.
+			 * By default elements with a role are not included in the result;
+			 * @return {Element[]} An array of elements.
+			 */
+			function getElementsWithAriaAttrLame(element, includeRole)
+			{
+				var result = [], global = $this.getSupported(),
+					document = (element.nodeType !== Node.DOCUMENT_NODE ? element.ownerDocument : element),
+					treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT,acceptNode,false);
+				
+				if(acceptNode(element) === NodeFilter.FILTER_ACCEPT)
+				{
+					result[result.length] = element;
+				}
+				while(treeWalker.nextNode())
+				{
+					result[result.length] = treeWalker.currentNode;
+				}
+				function acceptNode(node){
+					var result = NodeFilter.FILTER_SKIP, attrs, i, next;
+					if(includeRole || !node.hasAttribute("role"))
+					{
+						attrs = node.attributes;
+						for(i=0;i<attrs.length;i++)
+						{
+							next = attrs[i].name;
+							if(!(next in global) && ARIA_ATTR_RE.test(next))
+							{
+								result = NodeFilter.FILTER_ACCEPT;
+								break;
+							}
+						}
+					}
+					return result;
+				}
+				return result;
+			}
 
 			/**
 			 * Gets all elements with a "role" attribute.

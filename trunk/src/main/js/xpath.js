@@ -2,49 +2,56 @@ define(function(){
 	/**
 	 * @param {string} expr The xpath expression
 	 * @param {boolean} firstMatch set to true to return a single node only
-	 * @param doc The XML dom to query
+	 * @param {Element|Document} The XML dom to query
 	 * @return {Element|Array} The result of the xpath expression
 	 */
-	function query(expr, firstMatch, doc)
+	function query(expr, firstMatch, element)
 	{
-		var next, result, match, nsResolver, i, len;
-		if(doc.ownerDocument)
+		var next, result, match, nsResolver, i, len, doc;
+		if(element)
 		{
-			doc = doc.ownerDocument;
-		}
-		if(doc.evaluate)
-		{
-			nsResolver = document.createNSResolver(doc.documentElement);
-			if(firstMatch)
+			if(element.ownerDocument)
 			{
-				result = (doc.evaluate(expr, doc, nsResolver, XPathResult.FIRST_ORDERED_NODE_TYPE, null)).singleNodeValue;
+				doc = element.ownerDocument;
 			}
-			else
+			else if(element.nodeType === Node.DOCUMENT_NODE)
 			{
-				result = [];
-				match = doc.evaluate(expr, doc, nsResolver, XPathResult.ANY_TYPE, null);
-				while((next = match.iterateNext()))
+				doc = element;
+			}
+			if(doc.evaluate)
+			{
+				nsResolver = document.createNSResolver(doc.documentElement);
+				if(firstMatch)
 				{
-					result[result.length] = next;
+					result = (doc.evaluate(expr, element, nsResolver, XPathResult.FIRST_ORDERED_NODE_TYPE, null)).singleNodeValue;
+				}
+				else
+				{
+					result = [];
+					match = doc.evaluate(expr, element, nsResolver, XPathResult.ANY_TYPE, null);
+					while((next = match.iterateNext()))
+					{
+						result[result.length] = next;
+					}
 				}
 			}
-		}
-		else
-		{
-			ieNamespaceResolver(doc);
-			if(firstMatch)
-			{
-				result = doc.selectSingleNode(expr);
-			}
 			else
 			{
-				result = [];
-				match = doc.selectNodes(expr);
-				if(match)
+				ieNamespaceResolver(doc);
+				if(firstMatch)
 				{
-					for(i=0, len=match.length; i<len; i++)
+					result = element.selectSingleNode(expr);
+				}
+				else
+				{
+					result = [];
+					match = element.selectNodes(expr);
+					if(match)
 					{
-						result[result.length] = match[i];
+						for(i=0, len=match.length; i<len; i++)
+						{
+							result[result.length] = match[i];
+						}
 					}
 				}
 			}
@@ -55,7 +62,7 @@ define(function(){
 	function ieNamespaceResolver(doc)
 	{
 		var i, next, namespaces, attributes, namespaceRe;
-		if(doc.getProperty("SelectionNamespaces"))
+		if(!doc.getProperty("SelectionNamespaces"))
 		{
 			namespaces = "";
 			attributes = doc.documentElement.attributes;

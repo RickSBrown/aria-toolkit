@@ -5,16 +5,21 @@ define(function(){
 	 */
 	function loadXml(url)
 	{
-		var xhr;
+		var xhr, trident = (window.navigator.userAgent.indexOf(" Trident/") >= 0);
 		if(window.XMLHttpRequest)
 		{
 			xhr = new XMLHttpRequest();
 		}
-		else
+		else if("ActiveXObject" in window)
 		{
 			xhr = new ActiveXObject("Microsoft.XMLHTTP");
 		}
 		xhr.open("GET", url, false);
+		if(trident)
+		{
+			//Really only need to be here in IE10 and greater (trident >= 6)
+			try{xhr.responseType = "msxml-document";} catch(ignore){}
+		}
 		xhr.send();
 		return xhr.responseXML;
 	}
