@@ -1,4 +1,4 @@
-<project basedir="." default="dist">
+<project name="aria-toolkit" basedir="." default="dist">
 
 	<!--<property name="enable.debug" value="true"/>-->
 	<property name="aria.rdf.url" value="xml/aria-1.rdf"/>
@@ -12,7 +12,7 @@
 	<property name="build.js.debug.dir" location="${build.dir}/${js.debug.dir.name}"/>
 	<property name="dist.dir" location="dist"/>
 	<property name="test.build.dir" location="${build.dir}"/>
-	<property name="build.version" value="0.7"/>
+	<property name="build.version" value="0.8"/>
 	<property name="chrome-ext-dir-name" value="chrome-ext"/>
 	<property name="lib.dir" location="${basedir}/libs"/>
 	<property name="batik" value="batik-1.7"/>
@@ -21,14 +21,12 @@
 	<property name="jsdoc.home" location="${build.dir}/jsdoc-master"/>
 	<property name="rhino.jar" location="${jsdoc.home}/rhino/js.jar"/>
 
-
 	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpath="${basedir}/libs/closure-compiler/compiler.jar"/>
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
 		<classpath>
 			<pathelement location="${lib.dir}/ant-contrib/ant-contrib-0.6.jar"/>
 		</classpath>
 	</taskdef>
-
 
 	<target name="clean">
 		<delete dir="${build.dir}"/>
@@ -140,7 +138,7 @@
 		</for>
 	</target>
 
-	<target name="test" depends="dist" description="Build tests for the project">
+	<target name="test" depends="dist" description="Builds the unit tests">
 		<mkdir dir="${test.build.dir}"/>
 		<if>
 			<isset property="enable.debug"/>
@@ -163,12 +161,14 @@
 			</filterchain>
 		</copy>
 		<echo></echo>
-		<echo>********</echo>
-		<echo>Load 'SpecRunner.html' in your browser to run the tests.</echo>
-		<echo>********</echo>
+		<echo>************************************************************************</echo>
+		<echo>*                                                                      *</echo>
+		<echo>* Load 'SpecRunner.html' in your browser to run the tests.             *</echo>
+		<echo>*                                                                      *</echo>
+		<echo>************************************************************************</echo>
 	</target>
 
-	<target name="dist" depends="build" description="Builds the tarball for distribution">
+	<target name="dist" depends="build" description="Builds the distribution files to the dist dir">
 		<mkdir dir="${dist.dir}"/>
 		<pathconvert property="js.built.filenames" dirsep="&#10;">
 			<map from="${build.js.debug.dir}/" to="&#10;"/>

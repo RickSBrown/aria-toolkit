@@ -29,7 +29,7 @@ describe("ARIA", function() {
 	//	beforeEach(function() {
 	//
 	//	});
-
+	
 		it("getScope with no arguments should list all aria roles that require a particular scope", function() {
 			var actual = ARIA.getScope();
 			actual.sort();
@@ -129,7 +129,23 @@ describe("ARIA", function() {
 
 	/* VALIDATOR TESTS */
 	(function(){
-		var validator = window.ARIA;
+		var validator = window.ARIA,
+			validatorReady = !!validator.checkAriaOwns;
+		
+		it("should mixin validator methods to ARIA", function(done) {
+			if(!validatorReady)
+			{
+				window.setTimeout(function(){
+					validatorReady = !!validator.checkAriaOwns;
+					expect(validatorReady).toBeTruthy();
+					done();
+				}, 1000);
+			}
+			else
+			{
+				done();
+			}
+		});
 
 		it("checkAriaOwns on an element with no aria-owns should not report any problems", function() {
 			checkHelper("fileMenu",0 ,0);
