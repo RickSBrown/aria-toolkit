@@ -12,11 +12,11 @@ define(["xpath", "loadXml"], function(query, loadXml){
 	function Aria()
 	{
 		var aria = this,
-			ANCHOR_ONLY_RE = /^.*?#/,
-			HTML_CONCEPT_RE = /^.*?#edef-/,
+			ANCHOR_ONLY_RE = /^.*?#(?:edef\-)?/,
 			xmlDoc,
 			baseRole,//at time of writing (and probably forever) this will be roleType
-			conceptCache = [{}, {}],
+			getConcept,
+			relatedCache = {},
 			instances = {},
 			constructors = {};
 
@@ -27,7 +27,39 @@ define(["xpath", "loadXml"], function(query, loadXml){
 		this.getMustContain = getScopeFactory("role:mustContain");
 		this.getScopedTo = getScopedFactory("role:scope");
 		this.getScopedBy = getScopedFactory("role:mustContain");
-		this.getConcept = getConcept;
+		/**
+		 * Given an HTML element name will return the "related concept/s" if found.
+		 * @param {string} nodeName The HTML node name
+		 * @param {boolean} [conceptOnly] If true will not include results from "rdfs:seeAlso"
+		 * @return {String[]} An array of strings representing related ARIA roles
+		 */
+		this.getRelatedRole = function(nodeName, conceptOnly){
+			
+			var result, expression, name, names;
+			if(nodeName && (name = nodeName.trim()))
+			{
+				name = name.toLowerCase();
+				result = relatedCache[name];
+				if(!result)
+				{
+					initialise();
+					names = {name:name, ucasename: name.toUpperCase()};
+					expression = "(//owl:Class[role:baseConcept[contains(@rdf:resource,'html#edef-{name}')]]/@rdf:ID|//owl:Class[role:baseConcept[contains(@rdf:resource,'html#edef-{ucasename}')]]/@rdf:ID";
+					if(!conceptOnly)
+					{
+						expression += "|//owl:Class[rdfs:seeAlso[contains(@rdf:resource,'html#edef-{name}')]]/@rdf:ID|//owl:Class[rdfs:seeAlso[contains(@rdf:resource,'html#edef-{ucasename}')]]/@rdf:ID";
+					}
+					expression += ")";
+					expression = replace(expression, names);
+					result = relatedCache[name] = cleanRoles(query(expression, false, xmlDoc));
+				}
+			}
+			else
+			{
+				throw new TypeError("nodeName can not be null");
+			}
+			return result;
+		};
 
 		/**
 		 * Determine if this role is in the ARIA RDF.
@@ -111,10 +143,35 @@ define(["xpath", "loadXml"], function(query, loadXml){
 			}
 			return result;
 		};
+		
+		/**
+		 * Gets the related HTML concept for a given aria role.
+		 * There are derived from "role:baseConcept" and "rdfs:seeAlso", though the latter can be disabled
+		 * @param {string} role An ARIA role
+		 * @param {boolean} [conceptOnly] If true will not include results from "rdfs:seeAlso"
+		 * @return {String[]} An array of strings representing related HTML concepts
+		 */
+		this.getConcept = function(role, conceptOnly){
+			var func;
+			if(!getConcept)
+			{
+				getConcept = [
+					getScopeFactory(["role:baseConcept", "rdfs:seeAlso"], "[contains(., 'html')]"),
+					getScopeFactory("role:baseConcept", "[contains(., 'html')]")
+				];
+			}
+			func = getConcept[(conceptOnly? 1 : 0)];
+			return func(role);
+		};
 
 		function getScopedFactory(nodeName)
 		{
-			var cache = {};
+			var cache = {},
+				template = "//owl:Class[{name}[@rdf:resource='#{role}']]/@rdf:ID";
+			if(nodeName)
+			{
+				template = replace(template, {name:nodeName});
+			}
 			/**
 			 * Given an ARIA role will find the container role/s (if any) which "contain" this role.
 			 *
@@ -137,7 +194,7 @@ define(["xpath", "loadXml"], function(query, loadXml){
 					if(!result)
 					{
 						initialise();
-						expression = "//owl:Class[child::" + nodeName + "[@rdf:resource='#" + role + "']]/@rdf:ID";
+						expression = replace(template, {role:role});
 						result = cache[role] = cleanRoles(query(expression, false, xmlDoc));
 					}
 				}
@@ -150,46 +207,12 @@ define(["xpath", "loadXml"], function(query, loadXml){
 		}
 
 		/**
-		 * Gets the related HTML concept.
-		 * There are derived from "role:baseConcept" and "rdfs:seeAlso", though the latter can be disabled
-		 * @param {string} role An ARIA role
-		 * @param {boolean} [conceptOnly] If true will not include results from "rdfs:seeAlso"
-		 * @return {String[]} An array of strings representing related HTML concepts
+		 * Creates methods for getScope and getMustContain (and getConcept).
+		 * @param {string|string[]} nodeName Child elements of owl:Class e.g. role:mustContain or role:scope
 		 */
-		function getConcept(role, conceptOnly)
+		function getScopeFactory(nodeName, predicate)
 		{
-			var result, expression, cache = conceptCache[(conceptOnly? 1 : 0)];
-			if(role)
-			{
-				//(//owl:Class[@rdf:ID="role"]/role:baseConcept|//owl:Class[@rdf:ID="role"]/rdfs:seeAlso)/@rdf:resource[contains(., 'html')]
-
-				result = cache[role];
-				if(!result)
-				{
-					initialise();
-					expression = '(//owl:Class[@rdf:ID="' + role + '"]/role:baseConcept';
-					if(!conceptOnly)
-					{
-						expression += '|//owl:Class[@rdf:ID="' + role + '"]/rdfs:seeAlso';
-					}
-					expression += ")/@rdf:resource[contains(., 'html')]";
-					result = cache[role] = cleanHtmlRefs(query(expression, false, xmlDoc));
-				}
-			}
-			else
-			{
-				throw new TypeError("role can not be null");
-			}
-			return result;
-		}
-
-		/**
-		 * Creates methods for getScope and getMustContain.
-		 * @param {string} nodeName Either role:mustContain or role:scope
-		 */
-		function getScopeFactory(nodeName)
-		{
-			var cache = [];
+			var isArray = Array.isArray(nodeName), cache = [];
 			/**
 			 * getScope: Find the "Required Context Role" for this role
 			 * getMustContain: Find the "Required Owned Elements" for this role
@@ -201,16 +224,31 @@ define(["xpath", "loadXml"], function(query, loadXml){
 			 * @example getMustContain("menu");
 			 */
 			return function(role){
-				var result;
-				initialise();
-				if(role)
-				{
-					result = cache[role] || (cache[role] = getRoleNodes(role, false, nodeName));
-				}
-				else
+				var i=0, result, next, nextResult, scoped;
+				if(!role)
 				{
 					role = "*";
-					result = cache[role] || (cache[role] = getScopedRoles(nodeName));
+					scoped = true;
+				}
+				result = cache[role];
+				if(!result)
+				{
+					initialise();
+					do
+					{
+						next = isArray? nodeName[i++] : nodeName;
+						if(scoped)
+						{
+							nextResult = getScopedRoles(next);
+						}
+						else
+						{
+							nextResult = getRoleNodes(role, false, next, predicate);
+						}
+						result = result? result.concat(nextResult) : nextResult;
+					}
+					while(isArray && i < nodeName.length);
+					cache[role] = result;
 				}
 				return result;
 			};
@@ -239,7 +277,7 @@ define(["xpath", "loadXml"], function(query, loadXml){
 		 * @return {Array|Element} An array of matching nodes OR if firstMatch is true a single node. OR if
 		 * child is provided then an array of strings representing ARIA roles.
 		 */
-		function getRoleNodes(role, firstMatch, child)
+		function getRoleNodes(role, firstMatch, child, predicate)
 		{
 			var result, xpathQuery = "//owl:Class";
 			if(role)
@@ -248,6 +286,10 @@ define(["xpath", "loadXml"], function(query, loadXml){
 				if(child)
 				{
 					xpathQuery += "/" + child + "/@rdf:resource";
+					if(predicate)
+					{
+						xpathQuery += predicate;
+					}
 				}
 			}
 			result = query(xpathQuery, firstMatch, xmlDoc);
@@ -285,27 +327,16 @@ define(["xpath", "loadXml"], function(query, loadXml){
 				result = query(expression, false, xmlDoc);
 			return cleanRoles(result);
 		}
-
-		function cleanRoles(roles)
-		{
-			return clean(roles, ANCHOR_ONLY_RE);
-		}
-
-		function cleanHtmlRefs(refs)
-		{
-			return clean(refs, HTML_CONCEPT_RE);
-		}
-
+		
 		/**
-		 * @param {Attribute[]} attributes An array of attribute nodes
-		 * @param {RegExp} re The regular expression to be used in a relace to clean the attribute value.
+		 * @param {Attribute[]} roles An array of attribute nodes
 		 * @returns {string[]} The cleaned attribute values.
 		 */
-		function clean(attributes, re)
+		function cleanRoles(roles)
 		{
-			return attributes.map(function(next){
-					return next.nodeValue.replace(re, "");
-				});
+			return roles.map(function(next){
+				return next.value.replace(ANCHOR_ONLY_RE, "");
+			});
 		}
 
 		/*
@@ -415,6 +446,27 @@ define(["xpath", "loadXml"], function(query, loadXml){
 						superclassRoles = null;
 				}
 			}
+		}
+		
+		function replace(s, obj)
+		{
+			var result = s;
+			if(result && obj)
+			{
+				result = result.replace(/\{(.+?)\}/g, function(s, s1){
+					var result;
+					if(s1 && obj.hasOwnProperty(s1))
+					{
+						result = obj[s1];
+					}
+					else
+					{
+						result = s;
+					}
+					return result;
+				});
+			}
+			return result;
 		}
 	}
 	return new Aria();
