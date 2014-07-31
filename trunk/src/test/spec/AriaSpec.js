@@ -53,6 +53,20 @@ describe("ARIA", function() {
 		getScopeHelper("checkbox", [], "getMustContain");
 		getScopeHelper("menubar", ["menuitem", "menuitemcheckbox", "menuitemradio"], "getScopedTo");
 		getScopeHelper("option", ["listbox"], "getScopedBy");
+		getScopeHelper("gridcell", ["TD"], "getConcept");
+		getScopeHelper("list", ["OL", "UL"], "getConcept");
+		getScopeHelper("listbox", ["SELECT"], "getConcept");
+		getScopeHelper("select", [], "getConcept");
+		getScopeHelper("separator", ["HR"], "getConcept");
+		getScopeHelper("textbox", ["TEXTAREA", "INPUT"], "getConcept");
+		getScopeHelper("button", ["BUTTON"], "getConcept");
+		getScopeHelper("BUTTON", ["button"], "getRelatedRole");
+		getScopeHelper("button", ["button"], "getRelatedRole");
+		getScopeHelper("TEXTAREA", ["textbox"], "getRelatedRole");
+		getScopeHelper("INPUT", ["checkbox","radio","textbox"], "getRelatedRole");
+		getScopeHelper("HR", ["separator"], "getRelatedRole");
+		getScopeHelper("select", ["combobox", "listbox"], "getRelatedRole");
+		getScopeHelper("div", [], "getRelatedRole");
 
 		getSupportedHelper("checkbox", [
 			{name:"aria-checked", value:ARIA.REQUIRED},
@@ -101,14 +115,15 @@ describe("ARIA", function() {
 		function getScopeHelper(role, expected, funcName)
 		{
 			var method = funcName || "getScope",
-				message = method + " for '" + role + "' role should return ";
+				isArray = Array.isArray(role),
+				message = method + " for '" + (isArray? role.join(): role) + "' role should return ";
 			if(expected)
 			{
 				expected.sort();
 				message += expected.length? expected.join() : "an empty array";
 			}
 			it(message, function() {
-				var actual = ARIA[method](role);
+				var actual = isArray? ARIA[method].apply(ARIA, role) : ARIA[method](role);
 				expect(actual.sort()).toEqual(expected);
 			});
 		}
