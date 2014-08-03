@@ -14,9 +14,9 @@ describe("ARIA", function() {
 		 * @type Array
 		 */
 		var globalStates = ["aria-atomic", "aria-busy", "aria-controls", "aria-describedby",
-									"aria-disabled", "aria-dropeffect", "aria-flowto", "aria-grabbed",
-									"aria-haspopup", "aria-hidden", "aria-invalid", "aria-label",
-									"aria-labelledby", "aria-live", "aria-owns", "aria-relevant"],
+							"aria-disabled", "aria-dropeffect", "aria-flowto", "aria-grabbed",
+							"aria-haspopup", "aria-hidden", "aria-invalid", "aria-label",
+							"aria-labelledby", "aria-live", "aria-owns", "aria-relevant"],
 			ALL_ROLES = ["alert","alertdialog","application","article","banner","button","checkbox","columnheader","combobox","command","complementary","composite","contentinfo","definition","dialog","directory","document","form","grid","gridcell","group","heading","img","input","landmark","link","list","listbox","listitem","log","main","marquee","math","menu","menubar","menuitem","menuitemcheckbox","menuitemradio","navigation","note","option","presentation","progressbar","radio","radiogroup","range","region","roletype","row","rowgroup","rowheader","search","section","sectionhead","select","separator","scrollbar","slider","spinbutton","status","structure","tab","tablist","tabpanel","textbox","timer","toolbar","tooltip","tree","treegrid","treeitem","widget","window"],
 			SCOPE_ROLES = ["combobox","grid","list","listbox","menu","radiogroup","row","rowgroup","tablist","tree","treegrid"],
 			REQUIRED_SCOPE_ROLES = ["columnheader", "gridcell", "listitem", "menuitem", "menuitemcheckbox", "menuitemradio", "row", "rowgroup", "rowheader", "tab", "treeitem"],
@@ -53,20 +53,20 @@ describe("ARIA", function() {
 		getScopeHelper("checkbox", [], "getMustContain");
 		getScopeHelper("menubar", ["menuitem", "menuitemcheckbox", "menuitemradio"], "getScopedTo");
 		getScopeHelper("option", ["listbox"], "getScopedBy");
-		getScopeHelper("gridcell", ["TD"], "getConcept");
-		getScopeHelper("list", ["OL", "UL"], "getConcept");
-		getScopeHelper("listbox", ["SELECT"], "getConcept");
-		getScopeHelper("select", [], "getConcept");
-		getScopeHelper("separator", ["HR"], "getConcept");
-		getScopeHelper("textbox", ["TEXTAREA", "INPUT"], "getConcept");
-		getScopeHelper("button", ["BUTTON"], "getConcept");
-		getScopeHelper("BUTTON", ["button"], "getRelatedRole");
-		getScopeHelper("button", ["button"], "getRelatedRole");
-		getScopeHelper("TEXTAREA", ["textbox"], "getRelatedRole");
-		getScopeHelper("INPUT", ["checkbox","radio","textbox"], "getRelatedRole");
-		getScopeHelper("HR", ["separator"], "getRelatedRole");
-		getScopeHelper("select", ["combobox", "listbox"], "getRelatedRole");
-		getScopeHelper("div", [], "getRelatedRole");
+		//getScopeHelper("gridcell", ["TD"], "getConcept");
+		//getScopeHelper("list", ["OL", "UL"], "getConcept");
+		//getScopeHelper("listbox", ["SELECT"], "getConcept");
+		//getScopeHelper("select", [], "getConcept");
+		//getScopeHelper("separator", ["HR"], "getConcept");
+		//getScopeHelper("textbox", ["TEXTAREA", "INPUT"], "getConcept");
+		//getScopeHelper("button", ["BUTTON"], "getConcept");
+		//getScopeHelper("BUTTON", ["button"], "getRelatedRole");
+		//getScopeHelper("button", ["button"], "getRelatedRole");
+		//getScopeHelper("TEXTAREA", ["textbox"], "getRelatedRole");
+		//getScopeHelper("INPUT", ["checkbox","radio","textbox"], "getRelatedRole");
+		//getScopeHelper("HR", ["separator"], "getRelatedRole");
+		//getScopeHelper("select", ["combobox", "listbox"], "getRelatedRole");
+		//getScopeHelper("div", [], "getRelatedRole");
 
 		getSupportedHelper("checkbox", [
 			{name:"aria-checked", value:ARIA.REQUIRED},
@@ -201,6 +201,10 @@ describe("ARIA", function() {
 		it("checkContainsRequiredElements with single required and dom owns and missing required nodes", function() {
 			checkHelper("rg2", 1, 0, "checkContainsRequiredElements");
 		});
+		
+		it("checkContainsRequiredElements with implicit roles", function() {
+			checkHelper("implicitMustContainElement", 0, 0, "checkContainsRequiredElements");
+		});
 
 		it("checkInRequiredScope with single required and dom owns", function() {
 			checkHelper("cb1-opt1", 0, 0, "checkInRequiredScope");
@@ -216,6 +220,10 @@ describe("ARIA", function() {
 
 		it("checkInRequiredScope not in correct scope", function() {
 			checkHelper("menuitemFail", 1, 0, "checkInRequiredScope");
+		});
+		
+		it("checkInRequiredScope with implicit scope", function() {
+			checkHelper("explicitListItem", 0, 0, "checkInRequiredScope");
 		});
 
 		it("checkSupportsAllAttributes on mandatory attribute", function() {
@@ -262,17 +270,17 @@ describe("ARIA", function() {
 			checkHelper("checkbox1", 1, 0, "checkRequiredAttributes");
 		});
 
-		it("checkFirstRule on option with option role", function() {
-			checkHelper("badOpt", 0, 1, "checkFirstRule");
-		});
-
-		it("checkFirstRule on option with option role (not passing role)", function() {
-			checkHelper("badOpt", 0, 1, "checkFirstRule", true);
-		});
-
-		it("checkFirstRule on li with radio role", function() {
-			checkHelper("r1", 0, 0, "checkFirstRule");
-		});
+//		it("checkFirstRule on option with option role", function() {
+//			checkHelper("badOpt", 0, 1, "checkFirstRule");
+//		});
+//
+//		it("checkFirstRule on option with option role (not passing role)", function() {
+//			checkHelper("badOpt", 0, 1, "checkFirstRule", true);
+//		});
+//
+//		it("checkFirstRule on li with radio role", function() {
+//			checkHelper("r1", 0, 0, "checkFirstRule");
+//		});
 
 		it("checkSecondRule on heading with role", function() {
 			checkHelper("badHeading", 0, 1, "checkSecondRule");
@@ -329,6 +337,9 @@ describe("ARIA", function() {
 					{id:"nonglobalAttrsAndInvalidRole", fail:0, warn:0},
 					{id:"mixedAttrsNoRole", fail:1, warn:0},
 					{id:"mixedAttrsAndRole", fail:0, warn:0},
+					{id:"nonglobalAttrsRightImplicitRole", fail:0, warn:1},
+					{id:"nonglobalAttrsWrongImplicitRole", fail:1, warn:0},
+					{id:"implicitRoleImplicitStates", fail:0, warn:0},
 					{id:"mixedAttrsAndInvalidRoles", fail:0, warn:0}
 				],
 				funcName = "checkByAttribute";
@@ -336,7 +347,7 @@ describe("ARIA", function() {
 				if(!check.nocount)
 				{
 					failCountTotal += check.fail;
-					warnCountTotal += warnCountTotal;
+					warnCountTotal += check.warn;
 				}
 				it(funcName + " on element " + check.id, function(){
 					checkHelper(check.id, check.fail, check.warn, funcName);
@@ -405,7 +416,96 @@ describe("ARIA", function() {
 				expect(actual.length).toEqual(expectedLen);
 			});
 		}
-
+	})();
+	
+	(function(){
+		//aria.utils tests - todo separate spec
+		getRoleHelper(getElement("input"), "textbox", true);
+		getRoleHelper(getElement("input", "text"), "textbox", true);
+		getRoleHelper(getElement("input", "radio"), "radio", true);
+		getRoleHelper(getElement("input", "button"), "button", true);
+		getRoleHelper(getElement("input", "date"), "spinbutton", true);
+		getRoleHelper(getElement("input", "email"), "textbox", true);
+		getRoleHelper(getElement("input", "foo"), "textbox", true);
+		getRoleHelper(getElement("input", "checkbox"), "checkbox", true);
+		getRoleHelper(getElement("input", "password"), "textbox", true);
+		getRoleHelper(getElement("input", "image"), "button", true);
+		getRoleHelper(getElement("input", "number"), "spinbutton", true);
+		getRoleHelper(getElement("input", "reset"), "button", true);
+		getRoleHelper(getElement("input", "submit"), "button", true);
+		getRoleHelper(getElement("input", "tel"), "textbox", true);
+		getRoleHelper(getElement("input", "range"), "slider", true);
+		getRoleHelper(getElement("textarea"), "textbox", true);
+		getRoleHelper(getElement("progress"), "progressbar", true);
+		getRoleHelper(getElement("option"), "option", true);
+		getRoleHelper(getElement("button"), "button", true);
+		getRoleHelper(getElement("button", "button"), "button", true);
+		getRoleHelper(getElement("button", "submit"), "button", true);
+		getRoleHelper(getElement("button", "foo"), "button", true);
+		getRoleHelper(getElement("select"), "select", true);
+		getRoleHelper(getElement("menu"), "menu", true);
+		getRoleHelper(getElement("menuitem"), "menuitem", true);
+		getRoleHelper(getElement("li"), null, true);
+		
+		it("getRole (implicit) on li in an ol", function() {
+			var actual, element = document.createElement("ol");
+			element = element.appendChild(document.createElement("li"));
+			actual = ARIA.getRole(element, true);
+			expect(actual).toEqual("listitem");
+		});
+		
+		it("getRole (implicit) on li in a ul", function() {
+			var actual, element = document.createElement("ul");
+			element = element.appendChild(document.createElement("li"));
+			actual = ARIA.getRole(element, true);
+			expect(actual).toEqual("listitem");
+		});
+		
+		it("getRole (implicit) on li in a menu", function() {
+			var actual, element = document.createElement("menu");
+			element = element.appendChild(document.createElement("li"));
+			actual = ARIA.getRole(element, true);
+			expect(actual).toEqual("menuitem");
+		});
+		
+		it("getRole (implicit) on li in a ul in a menu", function() {
+			var actual, element = document.createElement("menu");
+			element = element.appendChild(document.createElement("ul"));
+			element = element.appendChild(document.createElement("li"));
+			actual = ARIA.getRole(element, true);
+			expect(actual).toEqual("listitem");
+		});
+		
+		it("getRole on li in a menu in an ol", function() {
+			var actual, element = document.createElement("ol");
+			element = element.appendChild(document.createElement("menu"));
+			element = element.appendChild(document.createElement("li"));
+			actual = ARIA.getRole(element, true);
+			expect(actual).toEqual("menuitem");
+		});
+		
+		function getElement(tag, type)
+		{
+			var result = document.createElement(tag);
+			if(type)
+			{
+				result.setAttribute("type", type);
+			}
+			return result;
+		}
+		function getRoleHelper(element, expected, implicit)
+		{
+			var msg, elementString = element.tagName;
+			if(element.hasAttribute("type"))
+			{
+				elementString += "." + element.getAttribute("type");
+			}
+			msg = ("getRole on '" + elementString + "' with 'implicit " + (implicit?"on":"off") + "' should return " + expected);
+			it(msg, function() {
+				var actual = ARIA.getRole(element, implicit);
+				expect(actual).toEqual(expected);
+			});
+		}
 	})();
 
 });

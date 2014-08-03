@@ -1,4 +1,4 @@
-require(["aria", "xpath"], function(aria, xpathQuery){
+require(["aria.utils"], function(aria){
 	/**
 	 * This file provides functionality to validate the DOM to ensure that:
 	 * - Elements with ARIA roles are in the correct scope
@@ -341,11 +341,9 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 		{
 			var $this = this,
 				elementsThatAllowInputOrSelection = {input:true, select:true, textarea:true},//for the aria-required rules
-				supportsNativeRequiredCache = {},//caching results of supportsNativeRequired for performance reasons (could also be pre-populated to determine result)
-				checkByAttributeQuery ={},//cache the attribute queries once they have been built
 				roleChecks = {//todo, pull experiments out of roleChecks?
 					experiments:[
-						checkFirstRule,
+						//checkFirstRule,
 						checkSecondRule
 					],
 					tests :[checkInRequiredScope,
@@ -358,43 +356,23 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 				},
 				attributeChecks = {
 					tests:[checkSupportsAllAttributes,
-						checkAriaOwns]
+							checkRequiredAttributes,
+							checkAriaOwns]
 				},
 				ARIA_ATTR_RE = /^aria\-/,
-				HIGHLY_SEMANTIC_HTML = {//google: aria "strong native semantics"
-					H1:"H1",
-					H2:"H2",
-					H3:"H3",
-					H4:"H4",
-					H5:"H5",
-					H6:"H6"
-				},
-				ABSTRACT_ROLES = {
-					"command":true,
-					"composite":true,
-					"input":true,
-					"landmark":true,
-					"range":true,
-					"roletype":true,
-					"section":true,
-					"sectionhead":true,
-					"select":true,
-					"structure":true,
-					"widget":true,
-					"window":true},
 				options = {};
 
 			/* Making these granular validation routines public so other libraries can utilize */
-			$this.checkAriaOwns = checkAriaOwns;
-			$this.checkContainsRequiredElements = checkContainsRequiredElements;
-			$this.checkInRequiredScope = checkInRequiredScope;
-			$this.checkSupportsAllAttributes = checkSupportsAllAttributes;
-			$this.checkRequiredAttributes = checkRequiredAttributes;
-			$this.checkFirstRule = checkFirstRule;
-			$this.checkSecondRule = checkSecondRule;
-			$this.checkIds = checkIds;
-			$this.checkAbstractRole = checkAbstractRole;
-			$this.checkByAttribute = checkByAttribute;
+			this.checkAriaOwns = checkAriaOwns;
+			this.checkContainsRequiredElements = checkContainsRequiredElements;
+			this.checkInRequiredScope = checkInRequiredScope;
+			this.checkSupportsAllAttributes = checkSupportsAllAttributes;
+			this.checkRequiredAttributes = checkRequiredAttributes;
+			//this.checkFirstRule = checkFirstRule;
+			this.checkSecondRule = checkSecondRule;
+			this.checkIds = checkIds;
+			this.checkAbstractRole = checkAbstractRole;
+			this.checkByAttribute = checkByAttribute;
 			
 			/**
 			 * Validator configuration options.
@@ -467,8 +445,17 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 			 */
 			function checkByRole(element)
 			{
-				var elements = $this.getElementsWithRole(element);
-				return runChecks(elements, roleChecks, true);
+				var result,
+					elements = $this.getElementsWithRole(element);
+				if(elements)
+				{
+					result = runChecks(elements, roleChecks, true);
+				}
+				else
+				{
+					result = new Summary();
+				}
+				return result;
 			}
 
 			/**
@@ -480,8 +467,13 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 			 */
 			function checkByAttribute(element)
 			{
-				var elements = $this.getElementsWithAriaAttr(element);
-				return runChecks(elements, attributeChecks, false);
+				var result,
+					elements = $this.getElementsWithAriaAttr(element);
+				if(elements)
+				{
+					result = runChecks(elements, attributeChecks, false);
+				}
+				return result;
 
 			}
 
@@ -497,10 +489,10 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 					tests = tests.concat(checks.experiments);
 				}
 				elements.forEach(function(element){
-					var i, next, role = (usesRole? getRole(element) : null);
+					var i, next, role;
 					if(usesRole)
 					{
-						role = getRole(element);
+						role = aria.getRole(element);
 						if(role)
 						{
 							result.addRoles(role);
@@ -508,7 +500,7 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 					}
 					else
 					{
-						role = null;
+						role = aria.getImplicitRole(element) || null;
 					}
 					if(role || !usesRole)
 					{
@@ -523,54 +515,82 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 			}
 
 			/**
-			 * Attempts to check: http://www.w3.org/TR/aria-in-html/#first
-			 * This is EXPERIMENTAL and really difficult to test programatically - probably delete it.
-			 * @param {Element} element A DOM element with an ARIA role.
-			 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
-			 * @return {Summary} Any failures or warnings.
-			 * This check is not backed directly by the RDF.
-			 */
-			function checkFirstRule(element, role)
-			{
-				var concepts, result = new Summary(),
-					tagName = element.tagName;
-				if(arguments.length === 1)
-				{
-					role = getRole(element);
-				}
-				concepts = $this.getConcept(role, true);
-				if(tagName && concepts && concepts.length)
-				{
-					tagName = tagName.toUpperCase();
-					if(concepts.indexOf(tagName) >= 0)
-					{
-						result.addWarnings(new Message(" on " + tagName + " possibly violates <a target='_blank' href='http://www.w3.org/TR/aria-in-html/#rule1'>1st rule</a>, consider native: " + concepts.join(), role, element));
-					}
-				};
-				return result;
-			}
-
-			/**
 			 * Attempts to check: http://www.w3.org/TR/aria-in-html/#second
-			 * This is EXPERIMENTAL and really difficult to test programatically - probably delete it.
+			 * In other words it checks that an HTML element with strong native semantics has not been overridden with a
+			 * different role.
+			 *
 			 * @param {Element} element A DOM element with an ARIA role.
-			 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
+			 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by
+			 * minimizing DOM access).
 			 * @return {Summary} Any failures or warnings.
 			 * This check is not backed directly by the RDF.
 			 */
 			function checkSecondRule(element, role)
 			{
-				var result = new Summary(), tagName = element.tagName;
+				var result = new Summary(),
+					tagName = element.tagName,
+					strength, implicit;
 				if(arguments.length === 1)
 				{
-					role = getRole(element);
+					role = aria.getRole(element);
 				}
 				if(tagName && role)
 				{
-					tagName = tagName.toUpperCase();
-					if(HIGHLY_SEMANTIC_HTML.hasOwnProperty(tagName))
+					strength = aria.getSemanticStrength(element);
+					if(strength && strength === aria.getSemanticStrength.STRONG)
 					{
-						result.addWarnings(new Message(" on " + tagName + " possibly violates <a target='_blank' href='http://www.w3.org/TR/aria-in-html/#second'>2nd rule</a>", role, element));
+						implicit = aria.getImplicitRole(element);
+						if(implicit !== role)
+						{
+							result.addWarnings(new Message(" on " + tagName + " possibly violates <a target='_blank' href='http://www.w3.org/TR/aria-in-html/#second'>2nd rule</a>", role, element));
+						}
+					}
+				}
+				return result;
+			}
+			
+			/**
+			 * Attempts to check: http://www.w3.org/TR/aria-in-html/#second
+			 * In other words it checks that an HTML element with strong native semantics has not been overridden with a
+			 * different role.
+			 * 
+			 * Actually this test is badly named now since I have extended it to check a few other things too.
+			 *
+			 * @param {Element} element A DOM element with an ARIA role.
+			 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by
+			 * minimizing DOM access).
+			 * @return {Summary} Any failures or warnings.
+			 * This check is not backed directly by the RDF.
+			 */
+			function checkSecondRule(element, role)
+			{
+				var result = new Summary(),
+					tagName = element.tagName,
+					strength, implicit;
+				if(arguments.length === 1)
+				{
+					role = aria.getRole(element);
+				}
+				if(tagName && role)
+				{
+					strength = aria.getSemanticStrength(element);
+					if(strength)
+					{
+						if(strength === aria.getSemanticStrength.SACRED)
+						{
+							result.addWarnings(new Message(" on 'special' element: " + tagName, role, element));
+						}
+						else if((implicit = aria.getImplicitRole(element)))
+						{
+							if(implicit === role)
+							{
+								result.addWarnings(new Message(" on element " + tagName + " may be redundant because it implicitly has this role", role, element));
+							}
+							else if(strength === aria.getSemanticStrength.STRONG)
+							{
+								result.addWarnings(new Message(" on " + tagName + " possibly violates <a target='_blank' href='http://www.w3.org/TR/aria-in-html/#second'>2nd rule</a>", role, element));
+							}
+						}
 					}
 				}
 				return result;
@@ -612,7 +632,8 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 			}
 
 			/**
-			 * Check the implementation of the "aria-owns" attribute on this element regardless of whether the element has an ARIA role or not.
+			 * Check the implementation of the "aria-owns" attribute on this element regardless of whether the element
+			 * has an ARIA role or not.
 			 * - SHOULD not contain the element it owns
 			 * - MUST not "aria-own" an id that is "aria-owned" somewhere else.
 			 *
@@ -624,10 +645,11 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 			 */
 			function checkAriaOwns(element)
 			{
-				var attr="aria-owns", result = new Summary(), i, len, msg, next, nextElement, j, lenJ, nextJ, owners, owned = element.getAttribute(attr);
+				var attr="aria-owns", result = new Summary(), i, len, msg, next, nextElement, j, lenJ, nextJ, owners,
+					owned = element.getAttribute(attr);
 				if(owned)
 				{
-					owned = splitAriaIdList(owned);//don't use "getOwned" because we care about duplicate listings even if they are not found in the DOM
+					owned = aria.splitAriaIdList(owned);//don't use "getOwned" because we care about duplicate listings even if they are not found in the DOM
 					for(i=0, len=owned.length; i<len; i++)
 					{
 						next = owned[i];
@@ -674,18 +696,20 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 			/**
 			 * Checks that an element has not implemented an abstract role.
 			 * @param {Element} element A DOM element with an ARIA role.
-			 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
+			 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by
+			 * minimizing DOM access).
 			 * @return {Summary} Any failures or warnings.
-			 * This check is not backed directly by the RDF, the RDF does not mark abstract roles. It is solid as long as the RDF does not change.
+			 * This check is not backed directly by the RDF, the RDF does not mark abstract roles. It is solid as long
+			 * as the RDF does not change.
 			 */
 			function checkAbstractRole(element, role)
 			{
 				var result = new Summary();
 				if(arguments.length === 1)
 				{
-					role = getRole(element);
+					role = aria.getRole(element);
 				}
-				if(role && ABSTRACT_ROLES[role] && ABSTRACT_ROLES.hasOwnProperty(role))
+				if(aria.isAbstractRole(role))
 				{
 					result.addFailures(new Message(" Authors MUST NOT use abstract roles in content.", role, element));
 				}
@@ -695,20 +719,22 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 			/**
 			 * Checks that an element has implemented all states and properties required for its role.
 			 * @param {Element} element A DOM element with an ARIA role.
-			 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
+			 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by
+			 * minimizing DOM access).
 			 * @return {Summary} Any failures or warnings.
 			 */
 			function checkRequiredAttributes(element, role)
 			{
-				var result = new Summary(), prop, supported;
-				if(arguments.length === 1)
+				var prop, nativelySupported, supported, result = new Summary();
+				if(!role)
 				{
-					role = getRole(element);
+					role = aria.getRole(element, true);
 				}
-				supported = $this.getSupported(role);
+				supported = aria.getSupported(role);
+				nativelySupported = aria.getNativelySupported(element);
 				for(prop in supported)
 				{
-					if(supported[prop] === $this.REQUIRED && !element.hasAttribute(prop))
+					if(supported[prop] === aria.REQUIRED && !(element.hasAttribute(prop) || isNativelySupported(prop, nativelySupported)))
 					{
 						result.addFailures(new Message("missing required attribute: " + prop, role, element));
 					}
@@ -717,19 +743,22 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 			}
 
 			/**
-			 * Check that all the 'aria-*' attributes on this element are supported regardless of whether the element has an ARIA role or not.
+			 * Check that all the 'aria-*' attributes on this element are supported regardless of whether the element
+			 * has an ARIA role or not.
 			 * @param {Element} element The element we are checking for aria-* attributes.
-			 * @param {string} [role] Optionally provide the element's role or a falsey value if it does not have one (this allows you to optimize performance by minimizing DOM access).
+			 * @param {string} [role] Optionally provide the element's role or a falsey value if it does not have one
+			 * (this allows you to optimize performance by minimizing DOM access).
 			 * @return {Summary} Any failures or warnings.
 			 */
 			function checkSupportsAllAttributes(element, role)
 			{
-				var supported, result = new Summary(), message, i, next, attributes;
-				if(arguments.length === 1)
+				var supported, nativelySupported, message, i, next, attributes, result = new Summary();
+				if(!role)
 				{
-					role = getRole(element);
+					role = aria.getRole(element, true);
 				}
 				supported = $this.getSupported(role);
+				nativelySupported = aria.getNativelySupported(element);
 				attributes = element.attributes;
 				for(i=attributes.length-1; i>=0; i--)
 				{
@@ -739,17 +768,10 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 						//result.addAttrs(next);
 						if(!(next in supported))
 						{
+							
 							if(role)
 							{
 								message = new Message("unsupported attribute: " + next, role, element);
-							}
-							else if("aria-required" === next && isFormElement(element))//darn it a special case... if there are more special cases this should be externalized somehow
-							{
-								if(supportsNativeRequired(element))//in evergreen browsers this will always be true because they all support HTML5 required nowadays
-								{
-									//see also https://www.w3.org/Bugs/Public/show_bug.cgi?id=26416
-									message = new Message("is not allowed when 'an exactly equivalent native attribute is available'", next, element);
-								}
 							}
 							else
 							{
@@ -757,9 +779,31 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 							}
 							result.addFailures(message);
 						}
+						else if("aria-required" === next && isFormElement(element) && isNativelySupported(next, nativelySupported))//darn it a special case... if there are more special cases this should be externalized somehow
+						{
+							//see also https://www.w3.org/Bugs/Public/show_bug.cgi?id=26416
+							message = new Message("is not allowed when 'an exactly equivalent native attribute is available'", next, element);
+							result.addFailures(message);
+						}
+						else if(isNativelySupported(next, nativelySupported))
+						{
+							message = new Message("is unnecessary as an equivalent native attribute is available", next, element);
+							result.addWarnings(message);
+						}
 					}
 				}
 				return result;
+			}
+
+			/**
+			 * Is this attribute natively supported?
+			 * @param {string} attribute An aria attribute.
+			 * @param {Object} nativelySupported The result of a call to aria.getNativelySupported.
+			 * @return {boolean} true if this attribute is natively supported.
+			 */
+			function isNativelySupported(attribute, nativelySupported)
+			{
+				return (attribute in nativelySupported) && nativelySupported.hasOwnProperty(attribute);
 			}
 
 			/**
@@ -779,31 +823,6 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 			}
 
 			/**
-			 * This checks if the element natively supports "required".
-			 *
-			 * @param {Element} element The element to check.
-			 * @return {boolean} true if the element natively supports required.
-			 */
-			function supportsNativeRequired(element)
-			{
-				var result = false, testElement, tagName = element.tagName;
-				if(tagName)
-				{
-					tagName = tagName.toLowerCase();
-					if(supportsNativeRequiredCache.hasOwnProperty(tagName))
-					{
-						result = supportsNativeRequiredCache[tagName];
-					}
-					else
-					{
-						testElement = document.createElement(tagName);//create a new element in case there are expando attributes or properties on this instance
-						result = supportsNativeRequiredCache[tagName] = ("required" in testElement);
-					}
-				}
-				return result;
-			}
-
-			/**
 			 * Checks that an element has implemented a legitimate aria role.
 			 * @param {Element} element A DOM element with an ARIA role.
 			 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
@@ -814,7 +833,7 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 				var result = new Summary();
 				if(arguments.length === 1)
 				{
-					role = getRole(element);
+					role = aria.getRole(element);
 				}
 				if(role && !$this.hasRole(role))
 				{
@@ -834,7 +853,7 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 				var next, required, result = new Summary(), passed, owner, parent;
 				if(arguments.length === 1)
 				{
-					role = getRole(element);
+					role = aria.getRole(element);
 				}
 				required = $this.getScope(role);
 				passed = !required.length;
@@ -843,7 +862,7 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 					parent = element;
 					while((parent = parent.parentNode))
 					{
-						next = getRole(parent);
+						next = aria.getRole(parent, true);
 						if(next && required.indexOf(next) >= 0)
 						{
 							passed = true;
@@ -856,7 +875,7 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 					owner = $this.getOwner(element);
 					if(owner)
 					{
-						next = getRole(owner);
+						next = aria.getRole(owner, true);
 						if(next && required.indexOf(next) >= 0)
 						{
 							//console.log("passed by being explicitly owned");
@@ -877,10 +896,10 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 			 */
 			function checkContainsRequiredElements(element, role)
 			{
-				var i, j, required, busy, result = new Summary(), owned, next, passed;
+				var i, j, required, busy, result = new Summary(), owned, next, passed, descendants;
 				if(arguments.length === 1)
 				{
-					role = getRole(element);
+					role = aria.getRole(element);
 				}
 				required = $this.getMustContain(role);
 				passed = !required.length;
@@ -889,7 +908,8 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 					for(i=required.length-1; i>=0; i--)
 					{
 						next = required[i];
-						if(element.querySelector("[role='" + next + "']"))
+						descendants = aria.findDescendants(element, next);
+						if(descendants && descendants.length)
 						{
 							passed = true;
 							break;
@@ -906,7 +926,7 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 							next = owned[i];
 							for(j=required.length-1; j>=0; j--)
 							{
-								if(getRole(next) === required[j])
+								if(aria.getRole(next) === required[j])
 								{
 									//console.log("passed by explicit ownership");
 									passed = true;
@@ -930,201 +950,6 @@ require(["aria", "xpath"], function(aria, xpathQuery){
 				}
 				return result;
 			}
-
-			/**
-			* Gets the element that "aria-owns" this element
-			* @param {Element} element a DOM element
-			* @param {boolean} showAll If true will return multiple owners, if found, even though this is invalid (result will be nodeList).
-			* @return {Element|undefined}
-			* 		the element which owns the passed in element (if any) or undefined if no owner found
-			*/
-			$this.getOwner = function(element, showAll)
-			{
-				var id = element.id, ownerQuery, result, document = element.ownerDocument;
-				if(id)
-				{
-					id = id.replace(/'/g, "\\'");
-					ownerQuery = "[aria-owns~='" + id  + "']";
-					result = document.querySelectorAll(ownerQuery);
-					if(!showAll)
-					{
-						if(result)
-						{
-							if(result.length > 1)
-							{
-								console.warn("Found more than one element which 'aria-owns' id ", id);
-							}
-							result = result[0];
-						}
-					}
-				}
-				return result;
-			};
-			/**
-			 * Gets elements that are indirectly owned by a DOM element with "aria-owns".
-			 * @param {Element} element a DOM element.
-			 * @return {array} An array of elements owned by the element.
-			 */
-			$this.getOwned = function(element)
-			{
-				var ids = element.getAttribute("aria-owns"), result = [], i, len, owned, document = element.ownerDocument;
-				if(ids)
-				{
-					ids = splitAriaIdList(ids);
-					for(i = 0, len = ids.length; i < len; ++i)
-					{
-						owned = document.getElementById(ids[i]);
-						if(owned)
-						{
-							result.push(owned);
-						}
-						else
-						{
-							console.warn("can not element specified in 'aria-owns' with id ", ids[i]);
-						}
-					}
-				}
-				return result;
-			};
-
-			/**
-			 * Gets all elements with "aria-*" attributes.
-			 * @param {Element} element The scope of the search.
-			 * @param {boolean} [includeRole] If true will also include elements with a "role" attribute.
-			 * By default elements with a role are not included in the result;
-			 * @return {Element[]} An array of elements.
-			 */
-			$this.getElementsWithAriaAttr = function(element, includeRole){
-				var result, cacheKey = includeRole? "includeRole" : "excludeRole",
-					query = checkByAttributeQuery[cacheKey] || (checkByAttributeQuery[cacheKey] = buildAttributeQuery(includeRole));
-				if(document.evaluate)
-				{
-					result = xpathQuery(query, false, element);
-				}
-				else
-				{
-					result = getElementsWithAriaAttrLame(element, includeRole);
-				}
-				return result;
-			};
-			
-			/**
-			 * For browsers that do not support XPath on HTML DOM use an alternate (probably slower) method.
-			 * @param {Element} element The scope of the search.
-			 * @param {boolean} [includeRole] If true will also include elements with a "role" attribute.
-			 * By default elements with a role are not included in the result;
-			 * @return {Element[]} An array of elements.
-			 */
-			function getElementsWithAriaAttrLame(element, includeRole)
-			{
-				var result = [], global = $this.getSupported(),
-					document = (element.nodeType !== Node.DOCUMENT_NODE ? element.ownerDocument : element),
-					treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT,acceptNode,false);
-				
-				if(acceptNode(element) === NodeFilter.FILTER_ACCEPT)
-				{
-					result[result.length] = element;
-				}
-				while(treeWalker.nextNode())
-				{
-					result[result.length] = treeWalker.currentNode;
-				}
-				function acceptNode(node){
-					var result = NodeFilter.FILTER_SKIP, attrs, i, next;
-					if(includeRole || !node.hasAttribute("role"))
-					{
-						attrs = node.attributes;
-						for(i=0;i<attrs.length;i++)
-						{
-							next = attrs[i].name;
-							if(!(next in global) && ARIA_ATTR_RE.test(next))
-							{
-								result = NodeFilter.FILTER_ACCEPT;
-								break;
-							}
-						}
-					}
-					return result;
-				}
-				return result;
-			}
-
-			/**
-			 * Gets all elements with a "role" attribute.
-			 * @param {Element} element The scope of the search, only this element's subtree will be searched.
-			 * @return {Element[]} An array of elements.
-			 */
-			$this.getElementsWithRole = function(element){
-				var i, len, elements = element.querySelectorAll("[role]"), result = [];
-				if(result)
-				{
-					for(i=0, len = elements.length; i<len; i++)
-					{
-						result[i] = elements[i];
-					}
-				}
-				return result;
-			};
-
-			/**
-			 * Convert a space separated list of IDs to an array of IDs.
-			 * @param {string} val A space separated list of IDs
-			 * @returns {string[]} An array of the IDs in 'val'.
-			 */
-			function splitAriaIdList(val)
-			{
-				var result;
-				if(val)
-				{
-					result = val.split(/\s+/);
-				}
-				else
-				{
-					result = [];
-				}
-				return result;
-			}
-
-			/**
-			 * Gets the role from an element.
-			 * TODO why did I think this needed a helper? Kind of pointless.
-			 * @param {Element} element The DOM element whose role we want.
-			 * @return {string} The role of this element, if found.
-			 */
-			function getRole(element)
-			{
-				var result;
-				if(element.getAttribute)
-				{
-					result = element.getAttribute("role");
-				}
-				return result;
-			}
-
-			/*
-			 * Helper for getElementsWithAriaAttr.
-			 * Builds an XPath query that selects all nodes with no role with "aria-*" attributes that are not global.
-			 * ./descendant-or-self::node()[not(@role)][@*[starts-with(name(), 'aria-') and not(name()='aria-label' or name()='aria-hidden' or etc etc etc)]]
-			 */
-			function buildAttributeQuery(includeRole)
-			{
-				var prop,
-					global = $this.getSupported(),
-					predicates = [],
-					result = "./descendant-or-self::node()";
-				if(!includeRole)
-				{
-					result += "[not(@role)]";
-				}
-				result += "[@*[starts-with(name(), 'aria-') and not({predicates})]]";
-				for(prop in global)
-				{
-					predicates[predicates.length] = "name()='"+ prop + "'";
-				}
-				result = result.replace(/\{predicates\}/, predicates.join(" or "));
-				return result;
-			}
 		}
-
 	})();
 });

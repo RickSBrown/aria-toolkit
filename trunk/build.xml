@@ -45,6 +45,11 @@
 	-->
 	<target name="buildDebug" depends="init">
 		<xslt style="${src.dir}/main/xslt/aria-minifier.xsl" in="${lib.dir}/aria/aria-1.rdf" out="${build.dir}/xml/aria-1.rdf"/>
+		<copy todir="${build.dir}/xml">
+			<fileset dir="${src.dir}/main/xml">
+				<include name="*.xml"/>
+			</fileset>
+		</copy>
 		<copy todir="${build.js.debug.dir}">
 			<fileset dir="${js.src.dir}">
 				<include name="**/*.js"/>
