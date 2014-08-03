@@ -171,15 +171,22 @@
 
 	<target name="dist" depends="build" description="Builds the distribution files to the dist dir">
 		<mkdir dir="${dist.dir}"/>
-		<pathconvert property="js.built.filenames" dirsep="&#10;">
+		<pathconvert property="js.built.filenames">
 			<map from="${build.js.debug.dir}/" to="&#10;"/>
 			<path refid="js.built.file.list"/>
 		</pathconvert>
+		<fileset id="readmes" dir="${basedir}">
+			<include name="LICENSE"/>
+			<include name="README"/>
+		</fileset>
 		<copy todir="${build.dir}"><!-- Copy to build so it is bundled in the archive -->
-			<fileset dir="${basedir}">
-				<include name="LICENSE"/>
-				<include name="README"/>
-			</fileset>
+			<fileset refid="readmes"/>
+			<filterchain>
+				<expandproperties />
+			</filterchain>
+		</copy>
+		<copy todir="${dist.dir}"><!-- Copy to build so it is available for separate upload -->
+			<fileset refid="readmes"/>
 			<filterchain>
 				<expandproperties />
 			</filterchain>
@@ -199,7 +206,10 @@
 
 		<!--<property name="rhino.jar" location="${lib.dir}/jsdoc/js-1.7r3_jsdoc.jar"/>-->
 		<taskdef name="jsdoc" classname="net.jannon.ant.tasks.JsDoc3" classpath="${jsdoc3-task-jar}:${rhino.jar}"/>
-		<jsdoc jsdochome="${jsdoc.home}" to="${build.dir}/docs" dir="${js.src.dir}" />
+		<jsdoc jsdochome="${jsdoc.home}" to="${build.dir}/docs" >
+			<fileset dir="${js.src.dir}/" />
+		</jsdoc>
+		<!--<jsdoc jsdochome="${jsdoc.home}" to="${build.dir}/docs" file="${js.src.dir}/aria.js" />-->
 	</target>
 
 	<macrodef name="svgToIcon">
