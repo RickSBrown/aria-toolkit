@@ -1,22 +1,24 @@
 /*
- * This is the core toolkit AMD module (https://github.com/amdjs/amdjs-api/blob/master/AMD.md).
- * 
- * It knows what is in the WAI-ARIA taxonomy (the RDF); nothing more, nothing less.
- * Since the taxonomy does not provide enough information for every situation it is highly probable that you will
- * require additional logic to do useful things in your application. That additional logic does NOT belong here,
- * create higher level modules that add functionality.
+ * aria toolkit core module
  * 
  * Copyright (C) 2011  Rick Brown
  */
 define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 	var url = "${aria.rdf.url}";//The url where we can find the ARIA taxonomy
 	/**
-	 * Construct the core object which provides utility methods.
-	 * This object is as lazy as possible - data structure creation is deferred until use where
-	 * possible.
-	 * 
+	 * This is the core aria toolkit AMD module.
+	 * <br/>
+	 * It knows what is in the WAI-ARIA taxonomy (the RDF); nothing more, nothing less.
+	 * <br/>
+	 * Since the taxonomy does not provide enough information for every situation it is highly probable that you will
+	 * require additional logic to do useful things in your application. That additional logic does NOT belong here,
+	 * create higher level modules that add functionality.
+	 * <br/>
+	 * This object is as lazy as possible - data structure creation is deferred until use where possible.
+	 * <br/>
 	 * Creating more that one instance of this class is pointless and is considered an error.
 	 * @constructor
+	 * @exports aria
 	 */
 	function Aria()
 	{
@@ -30,15 +32,51 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 		this.SUPPORTED = 1;
 		this.REQUIRED = 2;
 
+		/**
+		 * Find the "Required Context Role" for this role.
+		 * @function
+		 * @param {string} [role] An ARIA role OR if not provided will return ALL roles that have a "Required Context Role".
+		 * @return {string[]} An array of ARIA roles.
+		 * @example getScope("menuitem");
+		 */
 		this.getScope = getScopeFactory("role:scope");
+
+		/**
+		 * Find the "Required Owned Elements" for this role.
+		 * @function
+		 * @param {string} [role] An ARIA role OR if not provided will return ALL roles that have "Required Owned Elements".
+		 * @return {string[]} An array of ARIA roles.
+		 * @example getMustContain("menu");
+		 */
 		this.getMustContain = getScopeFactory("role:mustContain");
+
+		/**
+		 * Given an ARIA role will find the container role/s (if any) which "contain" this role.
+		 *
+		 * This is to allow for asymetrical scoping in ARIA. For example, the role "menubar" is not required to contain anything.
+		 * Therefore: getMustContain("menubar") returns empty array.
+		 * However: getScopedTo("menubar") returns ["menuitem", "menuitemcheckbox", "menuitemradio"].
+		 * This is useful when trying to determine what a particlar role SHOULD contain, not must contain
+		 * (and not CAN contain because anything can contain anything).
+		 * @function
+		 * @param {string} [role] An ARIA role.
+		 * @return {string[]} An array of ARIA roles.
+		 */
 		this.getScopedTo = getScopedFactory("role:scope");
+
+		/**
+		 * Given an ARIA role will find the role/s (if any) which it must contain.
+		 *
+		 * @function
+		 * @param {string} [role] An ARIA role.
+		 * @return {string[]} An array of ARIA roles.
+		 */
 		this.getScopedBy = getScopedFactory("role:mustContain");
 
 		/**
 		 * Determine if this role is in the ARIA RDF.
 		 * @param {string} role
-		 * @returns {boolean} true if this role is in the ARIA RDF.
+		 * @return {boolean} true if this role is in the ARIA RDF.
 		 * @example hasRole("foobar");//returns false
 		 * @example hasRole("combobox");//returns true (at time of writing but this could change with newer versions of ARIA)
 		 */
@@ -227,8 +265,8 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 		/**
 		 * @param {string} [role] An ARIA role
 		 * @param {boolean} [firstMatch] Set to true to return a single node only
-		 * @param {string} child The name of a child element which refers to roles in an rdf:resource attribute
-		 * @return {Array|Element} An array of matching nodes OR if firstMatch is true a single node. OR if
+		 * @param {string} [child] The name of a child element which refers to roles in an rdf:resource attribute
+		 * @return {Element[]|Element|string[]} An array of matching nodes OR if firstMatch is true a single node. OR if
 		 * child is provided then an array of strings representing ARIA roles.
 		 */
 		function getRoleNodes(role, firstMatch, child, predicate)
@@ -342,7 +380,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 			/**
 			 * Add the ARIA states/properties to this object
 			 * @param {Object} in$tance An instance of an ARIA class
-			 * @param {Array} states An array of strings representing ARIA properties/states
+			 * @param {string[]} states An array of ARIA properties/states.
 			 * @param {Number} lvl One of the supportLvl enum
 			 */
 			function applyStates(in$tance, states, lvl)
