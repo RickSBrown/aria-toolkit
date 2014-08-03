@@ -41,7 +41,7 @@
 		var html;
 		if (msg.action && msg.action === "validate")
 		{
-			html = validateAria(msg.rdf);
+			html = validateAria(msg.rdf, msg.ariahtml);
 			if(html && html.length)
 			{
 				sendResponse(html);
@@ -54,15 +54,17 @@
 	 * @param {string} rdf The WAI-ARIA Taxonomy to use.
 	 * @returns {string} HTML which describes the findings of the validation.
 	 */
-	function validateAria(rdf){
-		var parser, rdfDom, summary, html = "";
+	function validateAria(rdf, ariahtml){
+		var dom, summary, html = "";
 		if(scope.ARIA)
 		{
-			if(!scope.ARIA.getRdf() && rdf)
+			if(!scope.ARIA.getRdf() && rdf && (dom = rehydrate(rdf)))
 			{
-				parser = new DOMParser();
-				rdfDom = parser.parseFromString(rdf, "text/xml");
-				scope.ARIA.setRdf(rdfDom);
+				scope.ARIA.setRdf(dom);
+			}
+			if(!scope.ARIA.getXml() && ariahtml && (dom = rehydrate(ariahtml)))
+			{
+				scope.ARIA.setXml(dom);
 			}
 			scope.ARIA.setValidatorOptions(options);
 			summary = scope.ARIA.check(window);
@@ -78,5 +80,21 @@
 			alert("Something bad happened.");
 		}
 		return html;
+	}
+	
+	/**
+	 * Deserializes an XML String to an XML DOM.
+	 * @param {string} xml Serialized XML.
+	 * @return {DOM} An XML DOM object.
+	 */
+	function rehydrate(xml)
+	{
+		var result, parser;
+		if(xml)
+		{
+			parser = new DOMParser();
+			result = parser.parseFromString(xml, "text/xml");
+		}
+		return result;
 	}
 })(this);

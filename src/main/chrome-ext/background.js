@@ -5,6 +5,7 @@
  */
 (function(scope){
 	var rdf = loadXml("xml/aria-1.rdf"),
+		ariahtml = loadXml("xml/aria-html.xml"),
 		DEFAULT_OPTIONS = {
 			ids: true,
 			experimental: false,
@@ -53,7 +54,7 @@
 	 * Wait for user to clicky buttony thingy.
 	 */
 	scope.chrome.browserAction.onClicked.addListener(function(tab){
-		scope.chrome.tabs.sendMessage(tab.id, { action: "validate", rdf:rdf}, displayResults);
+		scope.chrome.tabs.sendMessage(tab.id, { action: "validate", rdf:rdf, ariahtml:ariahtml}, displayResults);
 	});
 
 	/*

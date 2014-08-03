@@ -287,6 +287,14 @@ define(["aria","xpath", "loadXml"], function(aria, query, loadXml){
 			}
 			return result;
 		};
+		
+		this.setXml = function(xml){
+			xmlDoc = xml;
+		};
+
+		this.getXml = function(){
+			return xmlDoc;
+		};
 
 		/**
 		 * Get info object for this HTML DOM element.
@@ -350,7 +358,10 @@ define(["aria","xpath", "loadXml"], function(aria, query, loadXml){
 		{
 			if(!xmlDoc)
 			{
-				xmlDoc = loadXml(url);
+				loadXml(url);
+			}
+			if(!modifyingAttributes)
+			{
 				buildModifiers();
 				buildProperties();
 			}
