@@ -25,8 +25,8 @@ For performance reasons it is recommended that:
 Javascript files you will find in the distribution archive:
 ${js.built.filenames}
 
-${js.debug.dir.name} contains human readable versions
-${js.dir.name} contains minified versions
+The directory '${js.debug.dir.name}' contains human readable versions
+The directory '${js.dir.name}' contains minified versions
 
 The JS files that end with "-layer" are standalone libraries that you can simply load into your HTML page like any other script.
 
@@ -39,15 +39,9 @@ The other JS files are AMD modules which are provided for more granular use in o
 aria.js Is the core library that drives everything else. By default it adds one global property "ARIA".
 Simply load it like any other script, for example:
 
-<script type="text/javascript" src="js/aria-${build.version}.js"></script>
+<script type="text/javascript" src="${js.dir.name}/${aria.module.name}-layer.js"></script>
 
-window.ARIA provides the following public methods:
-
-ARIA.getScope
-ARIA.getMustContain
-ARIA.getSupported
-
-These are documented in the unminified version of the file.
+The methods each module provides are documented in the unminified versions of the files.
 
 aria-1.rdf
 ************************
@@ -55,16 +49,10 @@ The js libraries have an external dependency: the ARIA taxonomy (currently aria-
 http://www.w3.org/WAI/ARIA/schemata/aria-1.rdf
 
 A stripped down version of this file (for bandwidth reasons) is included but you can use your own copy if you prefer.
-The js code looks for this file at the relative url "xml/aria-1.rdf". You can change this by hand or by building the project and
-overriding the ANT property "aria.rdf.url".
+The js code looks for this file at the relative url "xml/aria-1.rdf". You can change this by hand or by building the 
+project and overriding the ANT property "aria.rdf.url".
 
-aria.validator-${build.version}.js (uncompressed version is: aria.validator-[version-number]-debug.js)
+${aria.validator.module.name}-layer.js
 ************************
 This file adds extra functionality for validating ARIA in the DOM (and therefore must be loaded after aria.js).
 It does this by adding an extra public method to window.ARIA:
-
-ARIA.isValid
-
-This is documented in the unminified version of the file.
-
-All you need to do is load the script after the main aria.js script.
