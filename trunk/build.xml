@@ -97,6 +97,7 @@
 				<exclude name="${batik}/**"/>
 				<!--<exclude name="${js.debug.dir.name}/**"/>-->
 				<include name="**/*.rdf"/>
+				<include name="**/*.xml"/>
 				<include name="${js.dir.name}/${aria.validator.module.name}-layer.js"/>
 			</fileset>
 		</copy>
