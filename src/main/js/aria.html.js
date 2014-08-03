@@ -192,7 +192,7 @@ define(["aria","xpath", "loadXml"], function(aria, query, loadXml){
 				if(!infos)
 				{
 					initialise();
-					xpath = "/htmlconcepts/elements/element[role/@name='" + role + "']";
+					xpath = "/htmlconcepts/elements/element[role[@name='" + role + "']]";
 					infos = query(xpath, false, xmlDoc);
 					if(infos)
 					{
@@ -358,7 +358,7 @@ define(["aria","xpath", "loadXml"], function(aria, query, loadXml){
 		{
 			if(!xmlDoc)
 			{
-				loadXml(url);
+				xmlDoc = loadXml(url);
 			}
 			if(!modifyingAttributes)
 			{

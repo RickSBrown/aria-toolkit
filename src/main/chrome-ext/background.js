@@ -8,7 +8,7 @@
 		ariahtml = loadXml("xml/aria-html.xml"),
 		DEFAULT_OPTIONS = {
 			ids: true,
-			experimental: false,
+			experimental: true,
 			//ignorerequired: true,
 			//requiredxornative: false,
 			//requiredandnative: false,
