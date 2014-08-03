@@ -1,11 +1,20 @@
-define(["xpath", "loadXml"], function(query, loadXml){
+/*
+ * This is the core toolkit AMD module (https://github.com/amdjs/amdjs-api/blob/master/AMD.md).
+ * 
+ * It knows what is in the WAI-ARIA taxonomy (the RDF); nothing more, nothing less.
+ * Since the taxonomy does not provide enough information for every situation it is highly probable that you will
+ * require additional logic to do useful things in your application. That additional logic does NOT belong here,
+ * create higher level modules that add functionality.
+ * 
+ * Copyright (C) 2011  Rick Brown
+ */
+define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 	var url = "${aria.rdf.url}";//The url where we can find the ARIA taxonomy
 	/**
-	 * This module knows what is in the WAI-ARIA taxonomy (the RDF); nothing more, nothing less.
-	 * Since the taxonomy does not provide enough information for every situation it is highly probable that you will require
-	 * additional logic to do useful things in your application. That additional logic does NOT belong here, create higher level
-	 * modules that consume this one.
-	 *
+	 * Construct the core object which provides utility methods.
+	 * This object is as lazy as possible - data structure creation is deferred until use where
+	 * possible.
+	 * 
 	 * Creating more that one instance of this class is pointless and is considered an error.
 	 * @constructor
 	 */
@@ -15,8 +24,6 @@ define(["xpath", "loadXml"], function(query, loadXml){
 			ANCHOR_ONLY_RE = /^.*?#(?:edef\-)?/,
 			xmlDoc,
 			baseRole,//at time of writing (and probably forever) this will be roleType
-			getConcept,
-			relatedCache = {},
 			instances = {},
 			constructors = {};
 
@@ -27,39 +34,6 @@ define(["xpath", "loadXml"], function(query, loadXml){
 		this.getMustContain = getScopeFactory("role:mustContain");
 		this.getScopedTo = getScopedFactory("role:scope");
 		this.getScopedBy = getScopedFactory("role:mustContain");
-		/**
-		 * Given an HTML element name will return the "related concept/s" if found.
-		 * @param {string} nodeName The HTML node name
-		 * @param {boolean} [conceptOnly] If true will not include results from "rdfs:seeAlso"
-		 * @return {String[]} An array of strings representing related ARIA roles
-		 */
-		this.getRelatedRole = function(nodeName, conceptOnly){
-			
-			var result, expression, name, names;
-			if(nodeName && (name = nodeName.trim()))
-			{
-				name = name.toLowerCase();
-				result = relatedCache[name];
-				if(!result)
-				{
-					initialise();
-					names = {name:name, ucasename: name.toUpperCase()};
-					expression = "(//owl:Class[role:baseConcept[contains(@rdf:resource,'html#edef-{name}')]]/@rdf:ID|//owl:Class[role:baseConcept[contains(@rdf:resource,'html#edef-{ucasename}')]]/@rdf:ID";
-					if(!conceptOnly)
-					{
-						expression += "|//owl:Class[rdfs:seeAlso[contains(@rdf:resource,'html#edef-{name}')]]/@rdf:ID|//owl:Class[rdfs:seeAlso[contains(@rdf:resource,'html#edef-{ucasename}')]]/@rdf:ID";
-					}
-					expression += ")";
-					expression = replace(expression, names);
-					result = relatedCache[name] = cleanRoles(query(expression, false, xmlDoc));
-				}
-			}
-			else
-			{
-				throw new TypeError("nodeName can not be null");
-			}
-			return result;
-		};
 
 		/**
 		 * Determine if this role is in the ARIA RDF.
@@ -142,26 +116,6 @@ define(["xpath", "loadXml"], function(query, loadXml){
 				}
 			}
 			return result;
-		};
-		
-		/**
-		 * Gets the related HTML concept for a given aria role.
-		 * There are derived from "role:baseConcept" and "rdfs:seeAlso", though the latter can be disabled
-		 * @param {string} role An ARIA role
-		 * @param {boolean} [conceptOnly] If true will not include results from "rdfs:seeAlso"
-		 * @return {String[]} An array of strings representing related HTML concepts
-		 */
-		this.getConcept = function(role, conceptOnly){
-			var func;
-			if(!getConcept)
-			{
-				getConcept = [
-					getScopeFactory(["role:baseConcept", "rdfs:seeAlso"], "[contains(., 'html')]"),
-					getScopeFactory("role:baseConcept", "[contains(., 'html')]")
-				];
-			}
-			func = getConcept[(conceptOnly? 1 : 0)];
-			return func(role);
 		};
 
 		function getScopedFactory(nodeName)
@@ -446,27 +400,6 @@ define(["xpath", "loadXml"], function(query, loadXml){
 						superclassRoles = null;
 				}
 			}
-		}
-		
-		function replace(s, obj)
-		{
-			var result = s;
-			if(result && obj)
-			{
-				result = result.replace(/\{(.+?)\}/g, function(s, s1){
-					var result;
-					if(s1 && obj.hasOwnProperty(s1))
-					{
-						result = obj[s1];
-					}
-					else
-					{
-						result = s;
-					}
-					return result;
-				});
-			}
-			return result;
 		}
 	}
 	return new Aria();

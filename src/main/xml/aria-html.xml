@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    The implicit roles are based on Henri Sivonen's proposal: https://hsivonen.fi/aria-html5/
+-->
+<htmlconcepts>
+    <elements>
+        <element name="a" strong="false">
+            <role name="link"/>
+        </element>
+        <element name="address" strong="true">
+            <role name="contentinfo"/>
+        </element>
+        <element name="area" special="true"/>
+        <element name="article" strong="true">
+            <role name="region"/>
+        </element>
+        <element name="aside" strong="true">
+            <role name="note"/>
+        </element>
+        <element name="audio" strong="true"/>
+        <element name="base" special="true"/>
+        <element name="bdo" special="true"/>
+        <element name="body" special="true"/>
+        <element name="br" special="true"/>
+        <element name="button" strong="false">
+            <role name="button"/>
+        </element>
+        <element name="button" strong="false">
+            <role name="button"/>
+            <attributes>
+                <attribute name="type" value="button"/>
+            </attributes>
+        </element>
+        <element name="button" strong="true">
+            <role name="button"/>
+            <attributes>
+                <attribute name="type" value="reset"/>
+            </attributes>
+        </element>
+        <element name="button" strong="true">
+            <role name="button"/>
+            <attributes>
+                <attribute name="type" value="submit"/>
+            </attributes>
+        </element>
+        <element name="caption" strong="true"/>
+        <element name="command" strong="true">
+            <role name="menuitemradio"/>
+            <attributes>
+                <attribute name="type" value="radio"/>
+            </attributes>
+        </element>
+        <element name="col" special="true"/>
+        <element name="colgroup" special="true"/>
+        <element name="command" strong="true">
+            <role name="menuitemcheckbox"/>
+            <attributes>
+                <attribute name="type" value="checkbox"/>
+            </attributes>
+        </element>
+        <element name="datagrid" strong="true">
+            <role name="treegrid"/>
+        </element>
+        <element name="datatemplate" special="true"/>
+        <element name="del" strong="true"/>
+        <element name="details" strong="true">
+            <role name="region"/>
+        </element>
+        <element name="dialog" strong="true">
+            <role name="region"/>
+        </element>
+        <element name="embed" special="true"/>
+        <element name="fieldset" strong="true">
+            <role name="group"/>
+        </element>
+        <element name="figure" strong="true">
+            <role name="img"/>
+        </element>
+        <element name="footer" strong="true">
+            <role name="contentinfo"/>
+        </element>
+        <element name="h1" strong="true">
+            <role name="heading"/>
+        </element>
+        <element name="h2" strong="true">
+            <role name="heading"/>
+        </element>
+        <element name="h3" strong="true">
+            <role name="heading"/>
+        </element>
+        <element name="h4" strong="true">
+            <role name="heading"/>
+        </element>
+        <element name="h5" strong="true">
+            <role name="heading"/>
+        </element>
+        <element name="h6" strong="true">
+            <role name="heading"/>
+        </element>
+        <element name="head" special="true"/>
+        <element name="header" strong="true">
+            <role name="banner"/>
+        </element>
+        <element name="hr" strong="true">
+            <role name="separator"/>
+        </element>
+        <element name="html" strong="false">
+            <role name="document"/>
+        </element>
+        <element name="iframe" strong="false">
+            <role name="region"/>
+        </element>
+        <element name="input" strong="true">
+            <role name="button"/>
+            <attributes>
+                <attribute name="type" value="add"/>
+            </attributes>
+        </element>
+        <element name="input" strong="false">
+            <role name="button"/>
+            <attributes>
+                <attribute name="type" value="button"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="checkbox"/>
+            <attributes>
+                <attribute name="type" value="checkbox"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="spinbutton"/>
+            <attributes>
+                <attribute name="type" value="date"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="spinbutton"/>
+            <attributes>
+                <attribute name="type" value="datetime"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="spinbutton"/>
+            <attributes>
+                <attribute name="type" value="datetime-local"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="textbox"/>
+            <attributes>
+                <attribute name="type" value="email"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="input"/>
+            <attributes>
+                <attribute name="type" value="file"/>
+            </attributes>
+        </element>
+        <element name="input" special="true">
+            <role name="textbox"/>
+            <attributes>
+                <attribute name="type" value="hidden"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="button"/>
+            <attributes>
+                <attribute name="type" value="image"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="spinbutton"/>
+            <attributes>
+                <attribute name="type" value="month"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="button"/>
+            <attributes>
+                <attribute name="type" value="move-down"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="button"/>
+            <attributes>
+                <attribute name="type" value="move-up"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="spinbutton"/>
+            <attributes>
+                <attribute name="type" value="number"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="textbox"/>
+            <attributes>
+                <attribute name="type" value="password"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="radio"/>
+            <attributes>
+                <attribute name="type" value="radio"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="slider"/>
+            <attributes>
+                <attribute name="type" value="range"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="button"/>
+            <attributes>
+                <attribute name="type" value="remove"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="button"/>
+            <attributes>
+                <attribute name="type" value="reset"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="button"/>
+            <attributes>
+                <attribute name="type" value="submit"/>
+            </attributes>
+        </element>
+        <element name="input" strong="false">
+            <role name="textbox"/>
+        </element>
+        <element name="input" strong="false">
+            <role name="textbox"/>
+            <attributes>
+                <attribute name="type" value="text"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="textbox"/>
+            <attributes>
+                <attribute name="type" value="tel"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="spinbutton"/>
+            <attributes>
+                <attribute name="type" value="time"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="textbox"/>
+            <attributes>
+                <attribute name="type" value="url"/>
+            </attributes>
+        </element>
+        <element name="input" strong="true">
+            <role name="spinbutton"/>
+            <attributes>
+                <attribute name="type" value="week"/>
+            </attributes>
+        </element>
+        <element name="ins" strong="true"/>
+        <element name="label" strong="true"/>
+        <element name="legend" strong="true"/>
+        <element name="li" strong="true">
+            <role name="menuitem"/>
+            <scope name="menu"/>
+        </element>
+        <element name="li" strong="false">
+            <role name="listitem"/>
+            <scope name="ol"/>
+        </element>
+        <element name="li" strong="false">
+            <role name="listitem"/>
+            <scope name="ul"/>
+        </element>
+        <element name="link" special="true"/>
+        <element name="map" special="true"/>
+        <element name="mark" strong="true"/>
+        <element name="menu" strong="true">
+            <role name="menu"/>
+        </element>
+        <element name="menuitem" strong="true">
+            <role name="menuitem"/>
+        </element>
+        <element name="meta" special="true"/>
+        <element name="meter" strong="true"/>
+        <element name="nav" strong="true">
+            <role name="navigation"/>
+        </element>
+        <element name="nest" special="true"/>
+        <element name="noscript" special="true"/>
+        <element name="ol" strong="false">
+            <role name="list"/>
+        </element>
+        <element name="option" strong="true">
+            <role name="option"/>
+        </element>
+        <element name="output" strong="true">
+            <role name="region"/>
+        </element>
+        <element name="param" special="true"/>
+        <element name="progress" strong="true">
+            <role name="progressbar"/>
+        </element>
+        <element name="rule" special="true"/>
+        <element name="script" special="true"/>
+        <element name="section" strong="true">
+            <role name="region"/>
+        </element>
+        <element name="select" strong="true">
+            <role name="select"/>
+        </element>
+        <element name="source" special="true"/>
+        <element name="style" special="true"/>
+        <element name="tbody" special="true"/>
+        <element name="textarea" strong="true">
+            <role name="textbox"/>
+        </element>
+        <element name="textarea" strong="true">
+            <role name="textbox"/>
+            <attributes>
+                <attribute name="type" value="textarea"/>
+            </attributes>
+        </element>
+        <element name="tfoot" special="true"/>
+        <element name="th" strong="true">
+            <role name="rowheader"/>
+            <attributes>
+                <attribute name="scope" value="row"/>
+            </attributes>
+        </element>
+        <element name="th" strong="true">
+            <role name="columnheader"/>
+            <attributes>
+                <attribute name="scope" value="col"/>
+            </attributes>
+        </element>
+        <element name="thead" special="true"/>
+        <element name="title" special="true"/>
+        <element name="time" strong="true"/>
+        <element name="ul" strong="false">
+            <role name="list"/>
+        </element>
+        <element name="video" strong="true"/>
+    </elements>
+    <properties>
+        <!-- 
+            hname = html name
+            aname = aria name
+        -->
+        <attr hname="checked" aname="aria-checked"/>
+        <attr hname="disabled" aname="aria-disabled"/>
+        <attr hname="min" aname="aria-valuemin"/>
+        <attr hname="max" aname="aria-valuemax"/>
+        <attr hname="open" aname="aria-expanded"/>
+        <attr hname="required" aname="aria-required"/>
+        <attr hname="selected" aname="aria-selected"/>
+        <attr hname="value" aname="aria-valuenow"/>
+    </properties>
+</htmlconcepts>

@@ -63,6 +63,18 @@
 				</div>
 			</div>
 		</div>
+		<ul role="list" id="implicitMustContainElement"><!-- Testing 'must contain' -->
+			<li>List Item</li>
+			<li>List Item</li>
+			<li>List Item</li>
+			<li>List Item</li>
+		</ul>
+		<ul>
+			<li role="listitem" id="explicitListItem">List Item</li><!-- Testing 'required scope' -->
+			<li role="listitem">List Item</li>
+			<li role="listitem">List Item</li>
+			<li role="listitem">List Item</li>
+		</ul>
 		<h3 id="rg1_label">Lunch Options</h3>
 		<ul class="radiogroup" id="rg1" role="radiogroup" aria-labelledby="rg1_label">
 			<li id="r1"  tabindex="-1" role="radio" aria-checked="false">
@@ -164,6 +176,9 @@
 			<div id="globalAttrsAndRole" role="section" aria-hidden="false" aria-label="test"></div>
 			<div id="globalAttrsAndInvalidRole" role="foobar" aria-hidden="false"aria-label="test"></div>
 			<div id="nonglobalAttrsNoRole" aria-checked="false"></div>
+			<input type="range" id="implicitRoleImplicitStates" aria-orientation="horitzontal"/>
+			<input type="checkbox" id="nonglobalAttrsRightImplicitRole" aria-checked="false"/>
+			<input type="text" id="nonglobalAttrsWrongImplicitRole" aria-checked="false"/>
 			<div id="nonglobalAttrsAndRole" role="section" aria-checked="false"></div>
 			<div>
 				<div>
