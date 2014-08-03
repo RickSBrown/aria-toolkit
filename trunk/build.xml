@@ -45,11 +45,7 @@
 	-->
 	<target name="buildDebug" depends="init">
 		<xslt style="${src.dir}/main/xslt/aria-minifier.xsl" in="${lib.dir}/aria/aria-1.rdf" out="${build.dir}/xml/aria-1.rdf"/>
-		<copy todir="${build.dir}/xml">
-			<fileset dir="${src.dir}/main/xml">
-				<include name="*.xml"/>
-			</fileset>
-		</copy>
+		<xslt basedir="${src.dir}/main/xml" destdir="${build.dir}/xml" extension=".xml" style="${src.dir}/main/xslt/aria-minifier.xsl"/>
 		<copy todir="${build.js.debug.dir}">
 			<fileset dir="${js.src.dir}">
 				<include name="**/*.js"/>
@@ -96,8 +92,7 @@
 			<fileset dir="${build.dir}">
 				<exclude name="${batik}/**"/>
 				<!--<exclude name="${js.debug.dir.name}/**"/>-->
-				<include name="**/*.rdf"/>
-				<include name="**/*.xml"/>
+				<include name="xml/*.*"/>
 				<include name="${js.dir.name}/${aria.validator.module.name}-layer.js"/>
 			</fileset>
 		</copy>
