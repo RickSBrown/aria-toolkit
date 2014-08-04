@@ -7,52 +7,74 @@ ricksbrown73@gmail.com
 ARIA Toolkit provides:
 
 - A high performance, light, adaptable javascript library that "knows" about ARIA.
-Other javascript libraries/frameworks may consume this functionality.
+
+- ARIA utility methods for working with ARIA in HTML5 DOMs.
+
+- Methods that "know" about the implicit semantics of ARIA in HTML5.
 
 - An ARIA validator which allows you to check that your ARIA roles and attributes have been correctly implemented.
 
+************************
+
+BUILD
+
+The project needs to be built using Apache Ant before you can use it (there are unexpanded properties in the raw code).
+You can download Ant here: http://ant.apache.org/bindownload.cgi
+
+Once you have Ant set up open a terminal at the project root (the directory that contains "build.xml") and type:
+
+ant dist
+
+A directory called "dist" will be created containing a zip file which holds the built project.
+
+************************
+
+API DOCUMENTATION
+
+The Javascript modules are documented using JSDoc. You can read the documentation directly in the source code comments
+or open 'docs/index.html' in the distribution archive for a much prettier version.
+
+************************
+
+JAVASCRIPT FILES
+
+Javascript files you will find in the distribution archive:
+${js.built.filenames}
+
+These are AMD modules which are provided for granular use in other frameworks and tools. If you are going to use individual modules you
+will need an AMD loader, such as RequireJS: http://requirejs.org/docs/download.html
+
+The JS files that end with "-layer" are standalone libraries that you can simply load into your HTML page like any other script.
+You will not need an AMD loader (the layers use Almond: https://github.com/jrburke/almond).
+
+They contain the module associated with the name of the layer file as well as all its dependencies (except the XML files).
+By default they add one global property "ARIA". Simply load the one you want like any other script, for example:
+
+<script type="text/javascript" src="${js.dir.name}/${aria.validator.module.name}-layer.js"></script>
+
+The directory '${js.debug.dir.name}' contains human readable versions
+The directory '${js.dir.name}' contains minified versions
+
+************************
+
+XML DEPENDENCIES
+
+There are two XML files needed by the toolkit:
+1. The aria RDF (needed by the low level toolkit module).
+2. The aria-html.xml file found in the project source code (needed by higher level modules).
+
 The ARIA knowledge is provided by the ARIA taxonomy in rdf format found here:
 http://www.w3.org/TR/wai-aria/appendices#a_schemata
-This means that if the taxonomy changes the code will automatically adapt to the changes simply by using
+
+This means that if the taxonomy changes the core toolkit will automatically adapt to the changes simply by using
 the new version of the rdf file.
 
 For performance reasons it is recommended that:
 1. You ensure the rdf file is cached.
 2. You turn on http compression (this will have a huge impact on the rdf file).
 
-************************
-
-Javascript files you will find in the distribution archive:
-${js.built.filenames}
-
-The directory '${js.debug.dir.name}' contains human readable versions
-The directory '${js.dir.name}' contains minified versions
-
-The JS files that end with "-layer" are standalone libraries that you can simply load into your HTML page like any other script.
-
-aria-layer.js
-
-The other JS files are AMD modules which are provided for more granular use in other frameworks and tools.
-
-************************
-
-aria.js Is the core library that drives everything else. By default it adds one global property "ARIA".
-Simply load it like any other script, for example:
-
-<script type="text/javascript" src="${js.dir.name}/${aria.module.name}-layer.js"></script>
-
-The methods each module provides are documented in the unminified versions of the files.
-
-aria-1.rdf
-************************
-The js libraries have an external dependency: the ARIA taxonomy (currently aria-1.rdf) found here:
-http://www.w3.org/WAI/ARIA/schemata/aria-1.rdf
-
 A stripped down version of this file (for bandwidth reasons) is included but you can use your own copy if you prefer.
-The js code looks for this file at the relative url "xml/aria-1.rdf". You can change this by hand or by building the 
+The js code looks for this file at the relative url "xml/aria-1.rdf". You can change this by hand or by building the
 project and overriding the ANT property "aria.rdf.url".
 
-${aria.validator.module.name}-layer.js
 ************************
-This file adds extra functionality for validating ARIA in the DOM (and therefore must be loaded after aria.js).
-It does this by adding an extra public method to window.ARIA:

@@ -10,9 +10,8 @@
  */
 require(["aria.utils"], function(aria){
 	/**
-	 * Creates an aria validator with numerous public methods to run checks and find elements of interest.
-	 * TODO move the "find elements of interest" to a separate library since it is not a core part of validation.
-	 * @this aria
+	 * Provides conformance checking methods.
+	 * 
 	 * @exports ariavalidator
 	 */
 	function AriaValidator()
@@ -40,16 +39,14 @@ require(["aria.utils"], function(aria){
 			ARIA_ATTR_RE = /^aria\-/,
 			options = {};
 
-		/* Making these granular validation routines public so other libraries can utilize */
-		//this.checkFirstRule = checkFirstRule;
-
 		/**
 		 * Validator configuration options.
 		 * @function
-		 * @param {Object} opts Configuration options, as documented below:
-		 * opts.attributes - if true run checks
-		 * opts.experimental - if true run experimental tests
-		 * opts.ids - if true check IDs (not a true aria test but critical to aria success)
+		 * @param {Object} opts Configuration options, as documented below
+		 *
+		 * @param {boolean} [opts.attributes] if true find and check elements with aria attributes but no explicit aria role.
+		 * @param {boolean} [opts.experimental] if true run experimental tests
+		 * @param {boolean} [opts.ids] if true check IDs (not a true aria test but critical to aria success)
 		 */
 		this.setValidatorOptions = function(opts){
 			if(opts)
@@ -59,9 +56,10 @@ require(["aria.utils"], function(aria){
 		};
 
 		/**
-		 * Call ARIA.check to check the correctness of any ARIA roles and attributes used in this DOM.
+		 * Check the conformance of ARIA roles and attributes used in on elements in this window.
+		 * This is the highest level entry point to the validator; it is a convenience method to run all other checks.
 		 * @function
-		 * @param {Window} window The browser window.
+		 * @param {Window} window The window which contains the DOM document to test (could be window, self, top, etc).
 		 * @return {Summary[]} A summary of ARIA usage within this document and any frames it contains.
 		 * @example ARIA.check(window);
 		 */
@@ -107,8 +105,8 @@ require(["aria.utils"], function(aria){
 		};
 
 		/**
-		 * Runs role based checks.
-		 * This is a top level check - it runs a number of the more fine grained checks and is ultimately a convenience method.
+		 * Runs checks on elements which have an explicit ARIA role.
+		 * This is a convenience method to run lower level checks.
 		 * @function
 		 * @param {Element} element The element which scopes the checks.
 		 * @return {Summary} Any failures or warnings.
@@ -128,8 +126,8 @@ require(["aria.utils"], function(aria){
 		};
 
 		/**
-		 * Runs attribute based checks.
-		 * This is a top level check - it runs a number of the more fine grained checks and is ultimately a convenience method.
+		 * Runs checks on elements which have explicit ARIA attributes but no explicit role.
+		 * This is a convenience method to run lower level checks.
 		 * @function
 		 * @param {Element} element The element which scopes the checks.
 		 * @return {Summary} Any failures or warnings.
@@ -144,93 +142,29 @@ require(["aria.utils"], function(aria){
 			return result;
 		};
 
-		/*
-		 * Helper for top level checks (checkByAttribute, checkByRole)
-		 */
-		function runChecks(elements, checks, usesRole)
-		{
-			var result = new Summary(),
-				tests = checks.tests, len = tests.length;
-			if(options && options.experimental && checks.experiments)
-			{
-				tests = tests.concat(checks.experiments);
-			}
-			elements.forEach(function(element){
-				var i, next, role;
-				if(usesRole)
-				{
-					role = aria.getRole(element);
-					if(role)
-					{
-						result.addRoles(role);
-					}
-				}
-				else
-				{
-					role = aria.getImplicitRole(element) || null;
-				}
-				if(role || !usesRole)
-				{
-					for(i=0; i<len; i++)
-					{
-						next = tests[i];
-						next = aria[next](element, role);
-						result.merge(next);
-					}
-				}
-			});
-			return result;
-		}
-
 		/**
-		 * Attempts to check: http://www.w3.org/TR/aria-in-html/#second
-		 * In other words it checks that an HTML element with strong native semantics has not been overridden with a
-		 * different role.
-		 * @function
-		 * @param {Element} element A DOM element with an ARIA role.
-		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by
-		 * minimizing DOM access).
-		 * @return {Summary} Any failures or warnings.
-		 * This check is not backed directly by the RDF.
-		 */
-		this.checkSecondRule = function(element, role){
-			var result = new Summary(),
-				tagName = element.tagName,
-				strength, implicit;
-			if(arguments.length === 1)
-			{
-				role = aria.getRole(element);
-			}
-			if(tagName && role)
-			{
-				strength = aria.getSemanticStrength(element);
-				if(strength && strength === aria.getSemanticStrength.STRONG)
-				{
-					implicit = aria.getImplicitRole(element);
-					if(implicit !== role)
-					{
-						result.addWarnings(new Message(" on " + tagName + " possibly violates <a target='_blank' href='http://www.w3.org/TR/aria-in-html/#second'>2nd rule</a>", role, element));
-					}
-				}
-			}
-			return result;
-		};
-
-		/**
-		 * Attempts to check: http://www.w3.org/TR/aria-in-html/#second
-		 * In other words it checks that an HTML element with strong native semantics has not been overridden with a
-		 * different role.
+		 * Checks that:
+		 * <ul>
+		 *  <li>an HTML element with strong native semantics has not been overridden with a different role</li>
+		 *  <li>a 'special' HTML element has not been given an ARIA role</li>
+		 *  <li>an HTML element has not been given an explicit ARIA role that it already possesses implicitly</li>
+		 * </ul>
 		 *
-		 * Actually this test is badly named now since I have extended it to check a few other things too.
+		 * Test is badly named now since I have extended it to check more than the "second rule".
 		 * @function
 		 * @param {Element} element A DOM element with an ARIA role.
 		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by
 		 * minimizing DOM access).
 		 * @return {Summary} Any failures or warnings.
-		 * This check is not backed directly by the RDF.
+		 *
+		 * @example
+		 *	var element = document.createElement("button");
+		 *	element.setAttribute("role", "button");
+		 *	aria.checkSecondRule(element);//this will flag a wartning because the "button" role is implicit on HTML button elements.
 		 */
-		function checkSecondRule(element, role)
+		this.checkSecondRule = function(element, role)
 		{
+			//This check is not backed directly by the RDF.
 			var result = new Summary(),
 				tagName = element.tagName,
 				strength, implicit;
@@ -243,7 +177,7 @@ require(["aria.utils"], function(aria){
 				strength = aria.getSemanticStrength(element);
 				if(strength)
 				{
-					if(strength === aria.getSemanticStrength.SACRED)
+					if(strength === aria.semantic.SACRED)
 					{
 						result.addWarnings(new Message(" on 'special' element: " + tagName, role, element));
 					}
@@ -253,7 +187,7 @@ require(["aria.utils"], function(aria){
 						{
 							result.addWarnings(new Message(" on element " + tagName + " may be redundant because it implicitly has this role", role, element));
 						}
-						else if(strength === aria.getSemanticStrength.STRONG)
+						else if(strength === aria.semantic.STRONG)
 						{
 							result.addWarnings(new Message(" on " + tagName + " possibly violates <a target='_blank' href='http://www.w3.org/TR/aria-in-html/#second'>2nd rule</a>", role, element));
 						}
@@ -261,21 +195,31 @@ require(["aria.utils"], function(aria){
 				}
 			}
 			return result;
-		}
+		};
 
 		/**
-		 * Checks IDs within the context of this element. Looks for:
-		 * - Duplicate IDs
-		 * - IDs with illegal characters
-		 * Not strictly speaking an ARIA check however ARIA does depend heavily on IDs being correctly implemented.
-		 * Plus duplicate IDs are a pet hate of mine.
+		 * Checks the implementation of IDs within the context of this element.
+		 * This is not a true ARIA check however ARIA depends on IDs being correctly implemented.
+		 * <br/>
+		 * This check looks for:
+		 * <ul>
+		 * <li>Duplicate IDs</li>
+		 * <li>IDs with illegal characters (according to HTML5 rules).</li>
+		 * </ul>
+		 * 
 		 * @function
 		 * @param {Element} element The element which scopes the check. This REALLY should be a document element (node type 9),
 		 * it would be stupid to pass in anything else except for unit testing purposes.
 		 *
-		 * TODO assumes HTML5, check doctype and apply rules based on HTML version? But really, who writes HTML4 anymore?
+		 * @example
+		 *	var element = document.createElement("div");
+		 *	element.setAttribute("id", "kungfu");
+		 *	element.appendChild(element.cloneNode());
+		 *	element.appendChild(element.cloneNode());
+		 *	aria.checkIds(element);//this will flag errors because there are duplicate IDs.
 		 */
 		this.checkIds = function(element){
+			//TODO assumes HTML5, check doctype and apply rules based on HTML version? But really, who writes HTML4 anymore?
 			var result = new Summary(), i, next, nextId, len, elements = element.querySelectorAll("[id]"), found = {};
 			if(elements && (len = elements.length))
 			{
@@ -298,19 +242,27 @@ require(["aria.utils"], function(aria){
 		};
 
 		/**
-		 * Check the implementation of the "aria-owns" attribute on this element regardless of whether the element
-		 * has an ARIA role or not.
-		 * - SHOULD not contain the element it owns
-		 * - MUST not "aria-own" an id that is "aria-owned" somewhere else.
+		 * Check the implementation of the "aria-owns" attribute on this element.
+		 * This includes checking that:
+		 * <ul>
+		 *  <li>the element MUST not "aria-own" an id that is "aria-owned" somewhere else</li>
+		 *  <li>the element it "aria-owns" actually exists in the DOM</li>
+		 *  <li>the element SHOULD not contain the element it "aria-owns"</li>
+		 * </ul>
 		 * @function
 		 * @param {Element} element A DOM element to check.
 		 * @return {Summary} Any failures or warnings.
 		 *
-		 * This check is not founded on the RDF but it is a solid check.
-		 * TODO check that it does not own itself
+		 * @example
+		 *	var element = document.createElement("div");
+		 *	element.setAttribute("aria-owns", "kungfu");
+		 *	element = element.appendChild(document.createElement("span"));
+		 *	element.setAttribute("id", "kungfu");
+		 *	aria.checkAriaOwns(element);//this will flag a warning because the element "aria-owns" an element it implicitly owns in the DOM.
 		 */
 		this.checkAriaOwns = function(element)
 		{
+			//TODO check that it does not own itself
 			var attr="aria-owns", result = new Summary(), i, len, msg, next, nextElement, j, lenJ, nextJ, owners,
 				owned = element.getAttribute(attr);
 			if(owned)
@@ -360,16 +312,19 @@ require(["aria.utils"], function(aria){
 		};
 
 		/**
-		 * Checks that an element has not implemented an abstract role.
+		 * Checks to ensure this element has not explicitly implemented an abstract role.
 		 * @function
 		 * @param {Element} element A DOM element with an ARIA role.
-		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by
-		 * minimizing DOM access).
+		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
 		 * @return {Summary} Any failures or warnings.
-		 * This check is not backed directly by the RDF, the RDF does not mark abstract roles. It is solid as long
-		 * as the RDF does not change.
+		 *
+		 * @example
+		 *	var element = document.createElement("span");
+		 *	element.setAttribute("role", "input");
+		 *	aria.checkAbstractRole(element);//this will flag errors because "input" is an abstract role.
 		 */
 		this.checkAbstractRole = function(element, role){
+			//This check is not backed directly by the RDF, the RDF does not mark abstract roles. It is solid as long as the RDF does not change.
 			var result = new Summary();
 			if(arguments.length === 1)
 			{
@@ -385,10 +340,15 @@ require(["aria.utils"], function(aria){
 		/**
 		 * Checks that an element has implemented all states and properties required for its role.
 		 * @function
-		 * @param {Element} element A DOM element with an ARIA role.
+		 * @param {Element} element A DOM element.
 		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by
 		 * minimizing DOM access).
 		 * @return {Summary} Any failures or warnings.
+		 *
+		 * @example
+		 *	var element = document.createElement("span");
+		 *	element.setAttribute("role", "checkbox");
+		 *	aria.checkRequiredAttributes(element);//this will flag errors because "checkbox" has a required state of "aria-checked".
 		 */
 		this.checkRequiredAttributes = function(element, role){
 			var prop, nativelySupported, supported, result = new Summary();
@@ -409,13 +369,27 @@ require(["aria.utils"], function(aria){
 		};
 
 		/**
-		 * Check that all the 'aria-*' attributes on this element are supported regardless of whether the element
-		 * has an ARIA role or not.
+		 * Checks:
+		 * <ul>
+		 *  <li>all the 'aria-*' attributes on this element are supported</li>
+		 *  <li>aria attributes are not explicitly set on elements that implicitly provide the state/property</li>
+		 * </ul>
+		 * 
 		 * @function
 		 * @param {Element} element The element we are checking for aria-* attributes.
-		 * @param {string} [role] Optionally provide the element's role or a falsey value if it does not have one
-		 * (this allows you to optimize performance by minimizing DOM access).
+		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
 		 * @return {Summary} Any failures or warnings.
+		 * @example
+		 *	var element = document.createElement("span");
+		 *	element.setAttribute("role", "checkbox");
+		 *	element.setAttribute("aria-pressed", "true");
+		 *	aria.checkSupportsAllAttributes(element);//this will flag errors because "checkbox" does not support "aria-pressed".
+		 *
+		 * @example
+		 *	var element = document.createElement("input");
+		 *	element.setAttribute("type", "checkbox");
+		 *	element.setAttribute("aria-checked", "true");
+		 *	aria.checkSupportsAllAttributes(element);//this will flag a warning because HTML input of type chekbox implicitly provides "aria-checked".
 		 */
 		this.checkSupportsAllAttributes = function(element, role){
 			var supported, nativelySupported, message, i, next, attributes, result = new Summary();
@@ -462,39 +436,17 @@ require(["aria.utils"], function(aria){
 		};
 
 		/**
-		 * Is this attribute natively supported?
-		 * @function
-		 * @param {string} attribute An aria attribute.
-		 * @param {Object} nativelySupported The result of a call to aria.getNativelySupported.
-		 * @return {boolean} true if this attribute is natively supported.
-		 */
-		function isNativelySupported(attribute, nativelySupported)
-		{
-			return (attribute in nativelySupported) && nativelySupported.hasOwnProperty(attribute);
-		}
-
-		/**
-		 * Determine if this is a form elements that requires input or selection by the user.
-		 * @param {Element} element The element to check.
-		 * @return {boolean} true if the element is a form element that requires input or selection.
-		 */
-		function isFormElement(element)
-		{
-			var result = false, tagName = element.tagName;
-			if(tagName)
-			{
-				tagName = tagName.toLowerCase();
-				result = elementsThatAllowInputOrSelection.hasOwnProperty(tagName);
-			}
-			return result;
-		}
-
-		/**
 		 * Checks that an element has implemented a legitimate aria role.
+		 *
 		 * @function
 		 * @param {Element} element A DOM element with an ARIA role.
 		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
 		 * @return {Summary} Any failures or warnings.
+		 *
+		 * @example
+		 *	var element = document.createElement("span");
+		 *	element.setAttribute("role", "kungfu");
+		 *	aria.checkKnownRole(element);//this will flag errors because "kungfu" is not a legitimate aria role.
 		 */
 		this.checkKnownRole = function(element, role){
 			var result = new Summary();
@@ -515,6 +467,11 @@ require(["aria.utils"], function(aria){
 		 * @param {Element} element A DOM element with an ARIA role.
 		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
 		 * @return {Summary} Any failures or warnings.
+		 *
+		 * @example
+		 *	var element = document.createElement("span");
+		 *	element.setAttribute("role", "tab");
+		 *	aria.checkInRequiredScope(element);//this will flag errors because "tab" must be contained in "tablist".
 		 */
 		this.checkInRequiredScope = function(element, role){
 			var next, required, result = new Summary(), passed, owner, parent;
@@ -557,12 +514,19 @@ require(["aria.utils"], function(aria){
 			return result;
 		};
 
-		/*
-		 * TODO needs to be aware of descendant elements with roles that create boundaries?
-		 * I think it does not need to contain ALL the roles.
+		/**
+		 * Checks that this element contains everything it "must contain".
 		 * @function
+		 * @param {Element} element A DOM element.
+		 * @param {string} [role] Optionally provide the element's role (this allows you to optimize performance by minimizing DOM access).
+		 * @return {Summary} Any failures or warnings.
+		 * @example
+		 *	var element = document.createElement("div");
+		 *	element.setAttribute("role", "listbox");
+		 *	aria.checkContainsRequiredElements(element);//this will flag errors because it does not contain "option".
 		 */
 		this.checkContainsRequiredElements = function(element, role){
+			//TODO needs to be aware of descendant elements with roles that create boundaries?
 			var i, j, required, busy, result = new Summary(), owned, next, passed, descendants;
 			if(arguments.length === 1)
 			{
@@ -617,6 +581,74 @@ require(["aria.utils"], function(aria){
 			}
 			return result;
 		};
+
+		/*
+		 * Helper for top level checks (checkByAttribute, checkByRole)
+		 * Runs a number of checks and returns the combined result.
+		 */
+		function runChecks(elements, checks, usesRole)
+		{
+			var result = new Summary(),
+				tests = checks.tests, len = tests.length;
+			if(options && options.experimental && checks.experiments)
+			{
+				tests = tests.concat(checks.experiments);
+			}
+			elements.forEach(function(element){
+				var i, next, role;
+				if(usesRole)
+				{
+					role = aria.getRole(element);
+					if(role)
+					{
+						result.addRoles(role);
+					}
+				}
+				else
+				{
+					role = aria.getImplicitRole(element) || null;
+				}
+				if(role || !usesRole)
+				{
+					for(i=0; i<len; i++)
+					{
+						next = tests[i];
+						next = aria[next](element, role);
+						result.merge(next);
+					}
+				}
+			});
+			return result;
+		}
+		
+		/**
+		 * Is this attribute natively supported?
+		 *
+		 * @param {string} attribute An aria attribute.
+		 * @param {Object} nativelySupported The result of a call to aria.getNativelySupported.
+		 * @return {boolean} true if this attribute is natively supported.
+		 */
+		function isNativelySupported(attribute, nativelySupported)
+		{
+			return (attribute in nativelySupported) && nativelySupported.hasOwnProperty(attribute);
+		}
+
+		/**
+		 * Determine if this is a form elements that requires input or selection by the user.
+		 * 
+		 * @param {Element} element The element to check.
+		 * @return {boolean} true if the element is a form element that requires input or selection.
+		 */
+		function isFormElement(element)
+		{
+			var result = false, tagName = element.tagName;
+			if(tagName)
+			{
+				tagName = tagName.toLowerCase();
+				result = elementsThatAllowInputOrSelection.hasOwnProperty(tagName);
+			}
+			return result;
+		}
 	}
 
 	/**

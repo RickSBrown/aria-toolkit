@@ -1,154 +1,19 @@
 /*
- * This module knows about implementing ARIA in HTML5.
+ * Knows about the implicit semantics of HTML5 elements.
  * 
  * Copyright (C) 2014  Rick Brown
  */
-define(["aria","xpath", "loadXml"], function(aria, query, loadXml){
-	var url = "xml/aria-html.xml";
+define(["aria", "xpath", "loadXml"], function(aria, query, loadXml){
+	var url = "xml/aria-html.xml";//todo externalize this to build.xml
+	
 	AriaHtml.call(aria);
 	
-	aria.getSemanticStrength.SACRED = 3;
-	aria.getSemanticStrength.STRONG = 2;
-	aria.getSemanticStrength.WEAK = 1;
-	aria.getSemanticStrength.NONE = 0;
-	
 	/**
-	 * Build an array of ancestor tagnames.
-	 * @param {Element} element An HTML DOM element.
-	 * @returns {string[]} An array of tagnames in this element's ancestor tree.
-	 */
-	function getAncestorList(element)
-	{
-		var result = [], tagName;
-		while((element = element.parentNode))
-		{
-			tagName = element.tagName;
-			if(tagName)
-			{
-				tagName = tagName.toLowerCase();
-				result[result.length] = tagName;
-			}
-		}
-		return result;
-	}
-	
-	/**
-	 * Determine if this element is contained within another element.
-	 * @param {Element} element An HTML DOM element.
-	 * @param {string} tagName The name of the element we are looking for int the ancestry.
-	 * @param {string[]} [tree] Optionally (for performance reasons) provide the ancestor list.
-	 * @returns {Number} 0 if not found, otherwise the distance (1 parent, 2 is grandparent etc).
-	 */
-	function isScopedBy(element, tagName, tree)
-	{
-		tree = tree || getAncestorList(element);
-		return (tree.indexOf(tagName) + 1);
-	}
-	
-	/**
-	 * Find the HtmlInfo instance that best fits this element.
-	 * @param {Element} element A DOM element.
-	 * @param {HtmlInfo[]} htmlInfos An array of instances that match this element.
-	 * @return {HtmlInfo} The best matching instance for this element, if it could be determined.
-	 */
-	function getBestMatch(element, htmlInfos)
-	{
-		var result, i, nearest = 0, distance, next, tree = getAncestorList(element);
-		for(i=0; i<htmlInfos.length; i++)
-		{
-			next = htmlInfos[i];
-			if(next.scope)
-			{
-				distance = isScopedBy(element, next.scope, tree);
-				if(distance && (!nearest || distance < nearest))
-				{
-					nearest = distance;
-					result = next;
-				}
-			}
-		}
-		return result;
-	}
-	
-	/**
-	 * Find first descendant with this tagname and return it.
-	 * Identical to "element.querySelector(tagName);" but for XML elements that may not implement querySelector.
-	 * @param {Element} element An XML DOM element.
-	 * @param {string} tagName The tagName we are looking for.
-	 * @return {Element} The droid you are looking for, if found.
-	 */
-	function getDescendant(element, tagName)
-	{
-		var result;
-		if(element && tagName)
-		{
-			result = element.getElementsByTagName(tagName);
-			if(result && result.length)
-			{
-				result = result[0];
-			}
-			else
-			{
-				result = null;
-			}
-		}
-		return result;
-	}
-	/**
-	 * Knows important details about implementing ARIA on various HTML elements.
-	 * @param {Element} element An XML DOM element from our aria-html xml data.
-	 * @constrcutor
-	 */
-	function HtmlInfo(element)
-	{
-		var qs,
-			role = getDescendant(element, "role"),
-			scope = getDescendant(element, "scope");
-		this.name = element.getAttribute("name");
-		this.strong = (element.getAttribute("strong") === "true");
-		this.special = (element.getAttribute("special") === "true");
-		this.role = role? role.getAttribute("name") : "";
-		this.scope = scope? scope.getAttribute("name") : "";
-		
-		/**
-		 * Returns a queryelector query which can be used to find HTMLElements that match
-		 * this query instance.
-		 * @return {string} A CSS selector for this element.
-		 */
-		this.toQs = function(){
-			var i, next, result, attrs;
-			if(qs)
-			{
-				result = qs;
-			}
-			else
-			{
-				attrs = element.getElementsByTagName("attribute");
-				if(this.scope)
-				{
-					result = this.scope + " " + this.name;
-				}
-				else
-				{
-					result = this.name;
-				}
-				if(attrs)
-				{
-					for(i=0; i<attrs.length; i++)
-					{
-						next = attrs[i];
-						result += "[" + next.getAttribute("name") + "='" + next.getAttribute("value") + "']";
-					}
-				}
-				qs = result;
-			}
-			return result;
-		};
-	}
-	
-	/**
-	 * The main class of this module however instead of returning an instance we mix it in to the
-	 * main ARIA toolkit module and return that instead.
+	 * This module knows about implementing ARIA in HTML5. In particular it knows about implicit semantics.
+	 * The rules are specified in (and loaded from) the XML file aria-html.xml
+	 *
+	 * The methods are "mixed-in" to the base aria toolkit class.
+	 * @exports ariahtml
 	 */
 	function AriaHtml()
 	{
@@ -158,11 +23,29 @@ define(["aria","xpath", "loadXml"], function(aria, query, loadXml){
 			elementByRoleCache = {},
 			elementByXpathCache = {},
 			modifyingAttributes;
+
+		/**
+		 * Used to rank the native semantic strength of an HTML element.
+		 * @property {number} semantic.SACRED An HTML element with a special native purpose that makes no sense to override with an ARIA role.
+		 * @property {number} semantic.STRONG An HTML element with strong native semantics that should not be overriden with an ARIA role.
+		 * @property {number} semantic.WEAK An HTML element with weak native semantics that can be overriden with an ARIA role.
+		 * @property {number} semantic.NONE An HTML element with no native semantics that is begging for you to add an ARIA role.
+		 */
+		this.semantic = {
+			SACRED: 3,
+			STRONG: 2,
+			WEAK: 1,
+			NONE: 0
+		};
 		
 		/**
 		 * Determine the implicit role for this element.
 		 * @param {Element} element an HTML element.
 		 * @return {string} The implicit role for this element, or null if none could be determined.
+		 *
+		 * @example var element = document.createElement("input");
+		 * element.setAttribute("type", "checkbox");
+		 * console.log(aria.getImplicitRole(element)); //logs checkbox
 		 */
 		this.getImplicitRole = function(element){
 			var result = getInfoFor(element);
@@ -183,6 +66,14 @@ define(["aria","xpath", "loadXml"], function(aria, query, loadXml){
 		 * @param {Element} element an HTML DOM element.
 		 * @param {string} role The role thou seekest.
 		 * @return {Element[]} An array of matching elements.
+		 * @example
+		 *	var result, container = document.createElement("div"),
+		 *		button = document.createElement("button"),
+		 *		span = document.createElement("span");
+		 *	span.setAttribute("role", "button");
+		 *	container.appendChild(button);
+		 *	container.appendChild(span);
+		 *	result = aria.findDescendants(container, "button"); //result is an array containing both 'button' and 'span'
 		 */
 		this.findDescendants = function(element, role){
 			var result, qs = [], xpath, infos, qs;
@@ -224,17 +115,20 @@ define(["aria","xpath", "loadXml"], function(aria, query, loadXml){
 		
 		/**
 		 * Find the semantic strength of an HTML element.
-		 * There are four categories:
-		 * 1. special - can not take a role
-		 * 2. strong - has an implicit role, explicit role not recommended but if it is present must match its implicit role.
-		 * 3. weak - has an implicit role but can be overriden.
-		 * 4. none - can take any role.
 		 * @param {Element} element An HTML DOM element.
 		 * @return {number} one of:
-		 * getSemanticStrength.SACRED (truthy)
-		 * getSemanticStrength.STRONG (truthy)
-		 * getSemanticStrength.WEAK (truthy)
-		 * getSemanticStrength.NONE (falsey)
+		 * <ul>
+		 * <li>semantic.SACRED (truthy)</li>
+		 * <li>semantic.STRONG (truthy)</li>
+		 * <li>semantic.WEAK (truthy)</li>
+		 * <li>semantic.NONE (falsey)</li>
+		 * </ul>
+		 *
+		 * @example
+		 *	aria.getSemanticStrength(document.createElement("script"));// will return semantic.SACRED
+		 *	aria.getSemanticStrength(document.createElement("h1"));// will return semantic.STRONG
+		 *	aria.getSemanticStrength(document.createElement("button"));// will return semantic.WEAK
+		 *	aria.getSemanticStrength(document.createElement("div"));// will return semantic.NONE
 		 */
 		this.getSemanticStrength = function(element){
 			var result, info = getInfoFor(element);
@@ -257,7 +151,7 @@ define(["aria","xpath", "loadXml"], function(aria, query, loadXml){
 			{
 				result = "NONE";
 			}
-			result = this.getSemanticStrength[result];
+			result = this.semantic[result];
 			return result;
 		};
 
@@ -266,7 +160,15 @@ define(["aria","xpath", "loadXml"], function(aria, query, loadXml){
 		* 
 		* @param {Element} element The element to check.
 		* @return {string[]} An array of aria attributes.
-		* The attributes are also set as properties on the array object.
+		* The attributes are also set as properties on the array object, and the value of each property is the HTML equivalent.
+		*
+		* @example
+		*	var supported, element = document.createElement("input");
+		*	element.setAttribute("type", "range");
+		*	supported = aria.getNativelySupported(element);//supported is now an array of aria attribute names
+		*	console.log(supported.indexOf("aria-valuemax") >=0);//logs 'true'
+		*	console.log(supported["aria-valuemax"]);//logs 'max'
+		*
 		*/
 		this.getNativelySupported = function(element){
 			var i, next, nextSupported, result = [], testElement;
@@ -287,11 +189,19 @@ define(["aria","xpath", "loadXml"], function(aria, query, loadXml){
 			}
 			return result;
 		};
-		
+
+		/**
+		 * If you load the aria-html XML yourself you can provide it to the toolkit here.
+		 * @param {DOM} The aria-html XML DOM.
+		 */
 		this.setXml = function(xml){
 			xmlDoc = xml;
 		};
 
+		/**
+		 * Get the aria-html XML used by the toolkit (if it has been loaded).
+		 *  @return {DOM} The aria-html XML DOM used by the toolkit - don't hurt it.
+		 */
 		this.getXml = function(){
 			return xmlDoc;
 		};
@@ -405,6 +315,140 @@ define(["aria","xpath", "loadXml"], function(aria, query, loadXml){
 				htmlProps = Object.keys(htmlPropToAriaProp);
 			}
 		}
+	}
+
+	/**
+	 * Build an array of ancestor tagnames.
+	 * @param {Element} element An HTML DOM element.
+	 * @returns {string[]} An array of tagnames in this element's ancestor tree.
+	 */
+	function getAncestorList(element)
+	{
+		var result = [], tagName;
+		while((element = element.parentNode))
+		{
+			tagName = element.tagName;
+			if(tagName)
+			{
+				tagName = tagName.toLowerCase();
+				result[result.length] = tagName;
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Determine if this element is contained within another element.
+	 * @param {Element} element An HTML DOM element.
+	 * @param {string} tagName The name of the element we are looking for int the ancestry.
+	 * @param {string[]} [tree] Optionally (for performance reasons) provide the ancestor list.
+	 * @returns {Number} 0 if not found, otherwise the distance (1 parent, 2 is grandparent etc).
+	 */
+	function isScopedBy(element, tagName, tree)
+	{
+		tree = tree || getAncestorList(element);
+		return (tree.indexOf(tagName) + 1);
+	}
+
+	/**
+	 * Find the HtmlInfo instance that best fits this element.
+	 * @param {Element} element A DOM element.
+	 * @param {HtmlInfo[]} htmlInfos An array of instances that match this element.
+	 * @return {HtmlInfo} The best matching instance for this element, if it could be determined.
+	 */
+	function getBestMatch(element, htmlInfos)
+	{
+		var result, i, nearest = 0, distance, next, tree = getAncestorList(element);
+		for(i=0; i<htmlInfos.length; i++)
+		{
+			next = htmlInfos[i];
+			if(next.scope)
+			{
+				distance = isScopedBy(element, next.scope, tree);
+				if(distance && (!nearest || distance < nearest))
+				{
+					nearest = distance;
+					result = next;
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Find first descendant with this tagname and return it.
+	 * Identical to "element.querySelector(tagName);" but for XML elements that may not implement querySelector.
+	 * @param {Element} element An XML DOM element.
+	 * @param {string} tagName The tagName we are looking for.
+	 * @return {Element} The droid you are looking for, if found.
+	 */
+	function getDescendant(element, tagName)
+	{
+		var result;
+		if(element && tagName)
+		{
+			result = element.getElementsByTagName(tagName);
+			if(result && result.length)
+			{
+				result = result[0];
+			}
+			else
+			{
+				result = null;
+			}
+		}
+		return result;
+	}
+	/**
+	 * Knows important details about implementing ARIA on various HTML elements.
+	 * @param {Element} element An XML DOM element from our aria-html xml data.
+	 * @constrcutor
+	 */
+	function HtmlInfo(element)
+	{
+		var qs,
+			role = getDescendant(element, "role"),
+			scope = getDescendant(element, "scope");
+		this.name = element.getAttribute("name");
+		this.strong = (element.getAttribute("strong") === "true");
+		this.special = (element.getAttribute("special") === "true");
+		this.role = role? role.getAttribute("name") : "";
+		this.scope = scope? scope.getAttribute("name") : "";
+
+		/**
+		 * Returns a queryelector query which can be used to find HTMLElements that match
+		 * this query instance.
+		 * @return {string} A CSS selector for this element.
+		 */
+		this.toQs = function(){
+			var i, next, result, attrs;
+			if(qs)
+			{
+				result = qs;
+			}
+			else
+			{
+				attrs = element.getElementsByTagName("attribute");
+				if(this.scope)
+				{
+					result = this.scope + " " + this.name;
+				}
+				else
+				{
+					result = this.name;
+				}
+				if(attrs)
+				{
+					for(i=0; i<attrs.length; i++)
+					{
+						next = attrs[i];
+						result += "[" + next.getAttribute("name") + "='" + next.getAttribute("value") + "']";
+					}
+				}
+				qs = result;
+			}
+			return result;
+		};
 	}
 	return aria;
 });
