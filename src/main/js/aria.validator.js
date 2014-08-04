@@ -17,94 +17,7 @@ define(["aria.utils", "ValidationResult"], function(aria, ValidationResult){
 	function AriaValidator()
 	{
 		var elementsThatAllowInputOrSelection = {input:true, select:true, textarea:true},//for the aria-required rules
-			ARIA_ATTR_RE = /^aria\-/,
-			level = {
-				WARN: 0,
-				ERROR: 1
-			};
-
-
-		/**
-		 * validation error severity level.
-		 * @property {number} level.WARN A warning - not a showstopper.
-		 * @property {number} level.ERROR An error - implementation is non conforming.
-		 */
-		this.level = level;
-
-		this.validationerrors = {
-			ABSTRACT_ROLE_USED: {
-				msg: "{role} found - authors MUST NOT use abstract roles in content.",
-				level: level.ERROR
-			},
-			ARIA_OWNS_ALREADY_OWNED: {
-				msg: "{attr} IDREF {id} must not be 'aria-owned' by more than one element",
-				level: level.ERROR
-			},
-			ARIA_OWNS_DESCENDANT: {
-				msg: "{attr} should not be used if the relationship is represented in the DOM hierarchy",
-				level: level.WARN
-			},
-			ARIA_OWNS_NON_EXISTANT_ELEMENT: {
-				msg: "{attr} references element '{id}' that is not present in the DOM",
-				level: level.WARN
-			},
-			ARIA_REQUIRED_ON_FORM_ELEMENT: {
-				msg: "{attr} is not allowed when 'an exactly equivalent native attribute is available'.",
-				level: level.ERROR
-			},
-			DUPLICATE_ID: {
-				msg: "Found duplicate id '{id}'",
-				level: level.ERROR
-			},
-			INVALID_ID: {
-				msg: "Found id '{id}' but IDs are not allowed to have space characters",
-				level: level.ERROR
-			},
-			MISSING_REQUIRED_ROLES: {
-				msg: "{role} does not contain required roles {roles}.",
-				level: level.ERROR
-			},
-			MISSING_REQUIRED_ROLES_BUSY: {
-				msg: "{role} does not contain required roles {roles} (but it is busy, maybe you need to wait longer?).",
-				level: level.ERROR
-			},
-			NOT_IN_REQUIRED_SCOPE: {
-				msg: "{role} not in required scope {roles}.",
-				level: level.ERROR
-			},
-			REDUNDANT_ATTR: {
-				msg: "{attr} is unnecessary as an equivalent native attribute is available.",
-				level: level.WARN
-			},
-			REDUNDANT_ROLE: {
-				msg: "{role} on element: '{tag}' may be redundant because it implicitly has this role",
-				level: level.WARN
-			},
-			REQUIRED_ATTR_MISSING: {
-				msg: "{role} missing required attribute {attr}.",
-				level: level.ERROR
-			},
-			SPECIAL_ELEMENT_WITH_ROLE: {
-				msg: "{role} on 'special' element '{tag}'",
-				level: level.WARN
-			},
-			STRONG_ELEMENT_DIFFERENT_ROLE: {
-				msg: "{role} on element: '{tag}' is attempting to change strong native semantics (see <a target='_blank' href='http://www.w3.org/TR/aria-in-html/#second'>2nd rule</a>)",
-				level: level.WARN
-			},
-			UNKNOWN_ROLE: {
-				msg: "{role} role does not exist in ARIA.",
-				level: level.ERROR
-			},
-			UNSUPPORTED_ATTR_FOR_ELEMENT: {
-				msg: "{attr} is not supported on this element.",
-				level: level.ERROR
-			},
-			UNSUPPORTED_ATTR_FOR_ROLE: {
-				msg: "{role} unsupported attribute {attr}.",
-				level: level.ERROR
-			}
-		};
+			ARIA_ATTR_RE = /^aria\-/;
 
 		/**
 		 * Checks that:
@@ -572,6 +485,6 @@ define(["aria.utils", "ValidationResult"], function(aria, ValidationResult){
 	}
 	
 	AriaValidator.call(aria);//mixin the public API of the AriaValidator to the base ARIA object.
-	ValidationResult.setErrors(aria.validationerrors);
+	aria.ValidationResult = ValidationResult;//this is for non-AMD usage
 	return aria;
 });

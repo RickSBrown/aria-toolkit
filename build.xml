@@ -177,22 +177,30 @@
 			<map from="${build.js.debug.dir}/" to="&#10;"/>
 			<path refid="js.built.file.list"/>
 		</pathconvert>
-		<fileset id="readmes" dir="${basedir}">
-			<include name="LICENSE"/>
-			<include name="README"/>
-		</fileset>
 		<copy todir="${build.dir}"><!-- Copy to build so it is bundled in the archive -->
-			<fileset refid="readmes"/>
+			<fileset dir="${basedir}">
+				<include name="LICENSE"/>
+			</fileset>
 			<filterchain>
 				<expandproperties />
 			</filterchain>
 		</copy>
-<!--		<copy todir="${dist.dir}"> Copy to build so it is available for separate upload
-			<fileset refid="readmes"/>
+		<copy todir="${build.dir}"><!-- Copy to build so it is bundled in the archive -->
+			<fileset dir="${src.dir}/main">
+				<include name="README"/>
+			</fileset>
 			<filterchain>
 				<expandproperties />
 			</filterchain>
-		</copy>-->
+		</copy>
+		<copy todir="${basedir}"><!-- So people find the built version -->
+			<fileset dir="${src.dir}/main">
+				<include name="README"/>
+			</fileset>
+			<filterchain>
+				<expandproperties />
+			</filterchain>
+		</copy>
 		<zip destfile="${dist.dir}/aria-toolkit-${build.version}.zip" basedir="${build.dir}" includes="*, ${js.dir.name}/**, ${js.debug.dir.name}/**, xml/**, docs/**" excludes="jsdoc-master/**"/>
 	</target>
 
