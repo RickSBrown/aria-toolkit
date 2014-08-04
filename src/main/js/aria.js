@@ -14,7 +14,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 	 * require additional logic to do useful things in your application. That additional logic does NOT belong here,
 	 * create higher level modules that add functionality.
 	 * <br/>
-	 * This object is as lazy as possible - data structure creation is deferred until use where possible.
+	 * This object is as lazy as possible - data structure creation is deferred as long as possible.
 	 * <br/>
 	 * Creating more that one instance of this class is pointless and is considered an error.
 	 * @constructor
@@ -29,7 +29,9 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 			instances = {},
 			constructors = {};
 
+		/** Used in 'getSupported' when an attribute is supported but not required. */
 		this.SUPPORTED = 1;
+		/** Used in 'getSupported' when an attribute is required. */
 		this.REQUIRED = 2;
 
 		/**
@@ -37,7 +39,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 		 * @function
 		 * @param {string} [role] An ARIA role OR if not provided will return ALL roles that have a "Required Context Role".
 		 * @return {string[]} An array of ARIA roles.
-		 * @example getScope("menuitem");
+		 * @example aria.getScope("menuitem"); //returns ["menu", "menubar"]
 		 */
 		this.getScope = getScopeFactory("role:scope");
 
@@ -46,7 +48,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 		 * @function
 		 * @param {string} [role] An ARIA role OR if not provided will return ALL roles that have "Required Owned Elements".
 		 * @return {string[]} An array of ARIA roles.
-		 * @example getMustContain("menu");
+		 * @example aria.getMustContain("menu"); //returns ["group", "menuitemradio", "menuitem", "menuitemcheckbox", "menuitemradio"]
 		 */
 		this.getMustContain = getScopeFactory("role:mustContain");
 
@@ -61,6 +63,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 		 * @function
 		 * @param {string} [role] An ARIA role.
 		 * @return {string[]} An array of ARIA roles.
+		 * @example aria.getScopedTo("tablist"); //returns ["tab"]
 		 */
 		this.getScopedTo = getScopedFactory("role:scope");
 
@@ -70,6 +73,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 		 * @function
 		 * @param {string} [role] An ARIA role.
 		 * @return {string[]} An array of ARIA roles.
+		 * @example aria.getScopedBy("tab"); //returns ["tablist"]
 		 */
 		this.getScopedBy = getScopedFactory("role:mustContain");
 
@@ -78,7 +82,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 		 * @param {string} role
 		 * @return {boolean} true if this role is in the ARIA RDF.
 		 * @example hasRole("foobar");//returns false
-		 * @example hasRole("combobox");//returns true (at time of writing but this could change with newer versions of ARIA)
+		 * @example hasRole("combobox");//returns true
 		 */
 		this.hasRole = function(role){
 			var result;
@@ -93,25 +97,21 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 			return result;
 		};
 
+		/**
+		 * If you load the ARIA RDF yourself you can provide it to the toolkit here.
+		 * @param {DOM} rdf An XML DOM object.
+		 */
 		this.setRdf = function(rdf){
 			xmlDoc = rdf;
 		};
 
+		/**
+		 * Get the RDF used by the toolkit (if it has been loaded).
+		 * @return {DOM} The RDF DOM used by the toolkit - don't hurt it.
+		 */
 		this.getRdf = function(){
 			return xmlDoc;
 		};
-
-		/**
-		 * Call to perform one-time initialisation routine
-		 */
-		function initialise()
-		{
-			if(!baseRole)
-			{
-				xmlDoc = xmlDoc || loadXml(url);
-				buildConstructors();
-			}
-		}
 
 		/**
 		 * Find all the aria attributes supported/required by this element/role.
@@ -120,8 +120,12 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 		 * @see http://www.w3.org/TR/wai-aria/states_and_properties#global_states
 		 *
 		 * @param {string|Element} role An ARIA role or a DOM element
-		 * @return {Object} an object whose properties are the supported attributes. The values of these properties will be either SUPPORTED or REQUIRED
-		 * @example getSupported("checkbox");
+		 * @return {Object} an object whose properties (inherited not 'own') are the supported attributes. The values of these properties will be either SUPPORTED or REQUIRED.
+		 * @example
+		 *	var supported = getSupported("checkbox");
+		 *	console.log(supported["aria-checked"]); //logs '2'
+		 *	console.log(supported["aria-disabled"]); //logs '1'
+		 *	console.log(supported["aria-pressed"]); //logs 'undefined' or some other falsey value
 		 */
 		this.getSupported = function(role)
 		{
@@ -321,7 +325,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 		}
 		
 		/**
-		 * @param {Attribute[]} roles An array of attribute nodes
+		 * @param {Attribute[]} roles An array of attribute nodes.
 		 * @returns {string[]} The cleaned attribute values.
 		 */
 		function cleanRoles(roles)
@@ -378,10 +382,10 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 			}
 
 			/**
-			 * Add the ARIA states/properties to this object
-			 * @param {Object} in$tance An instance of an ARIA class
+			 * Add the ARIA states/properties to this object.
+			 * @param {Object} in$tance An instance of an ARIA class.
 			 * @param {string[]} states An array of ARIA properties/states.
-			 * @param {Number} lvl One of the supportLvl enum
+			 * @param {number} lvl One of the supportLvl enum.
 			 */
 			function applyStates(in$tance, states, lvl)
 			{
@@ -397,9 +401,9 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 
 			/**
 			 * Creates a new "class" representing an ARIA role.
-			 * @param {Array} required an array of strings representing ARIA properties/states required by this role
-			 * @param {Array} supported an array of strings representing ARIA properties/states supported by this role
-			 * @param {Array} superclassRoles an array of strings representing ARIA roles this role inherits from
+			 * @param {string[]} required ARIA properties/states required by this role
+			 * @param {string[]} supported ARIA properties/states supported by this role
+			 * @param {string[]} superclassRoles ARIA roles this role inherits from
 			 */
 			function constructorFactory(required, supported, superclassRoles)
 			{
@@ -437,6 +441,18 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 				{
 						superclassRoles = null;
 				}
+			}
+		}
+
+		/*
+		 * Call to perform one-time initialisation routine
+		 */
+		function initialise()
+		{
+			if(!baseRole)
+			{
+				xmlDoc = xmlDoc || loadXml(url);
+				buildConstructors();
 			}
 		}
 	}

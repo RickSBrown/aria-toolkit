@@ -12,7 +12,7 @@
 	<property name="build.js.debug.dir" location="${build.dir}/${js.debug.dir.name}"/>
 	<property name="dist.dir" location="dist"/>
 	<property name="test.build.dir" location="${build.dir}"/>
-	<property name="build.version" value="0.8"/>
+	<property name="build.version" value="0.9"/>
 	<property name="chrome-ext-dir-name" value="chrome-ext"/>
 	<property name="lib.dir" location="${basedir}/libs"/>
 	<property name="batik" value="batik-1.7"/>
@@ -169,7 +169,7 @@
 		<echo>************************************************************************</echo>
 	</target>
 
-	<target name="dist" depends="build" description="Builds the distribution files to the dist dir">
+	<target name="dist" depends="build, buildDoco" description="Builds the distribution files to the dist dir">
 		<mkdir dir="${dist.dir}"/>
 		<pathconvert property="js.built.filenames">
 			<map from="${build.js.debug.dir}/" to="&#10;"/>
@@ -185,13 +185,13 @@
 				<expandproperties />
 			</filterchain>
 		</copy>
-		<copy todir="${dist.dir}"><!-- Copy to build so it is available for separate upload -->
+<!--		<copy todir="${dist.dir}"> Copy to build so it is available for separate upload
 			<fileset refid="readmes"/>
 			<filterchain>
 				<expandproperties />
 			</filterchain>
-		</copy>
-		<zip destfile="${dist.dir}/aria-toolkit-${build.version}.zip" basedir="${build.dir}" includes="*, ${js.dir.name}/**, ${js.debug.dir.name}/**, xml/**" excludes="jsdoc-master/**"/>
+		</copy>-->
+		<zip destfile="${dist.dir}/aria-toolkit-${build.version}.zip" basedir="${build.dir}" includes="*, ${js.dir.name}/**, ${js.debug.dir.name}/**, xml/**, docs/**" excludes="jsdoc-master/**"/>
 	</target>
 
 	<target name="buildDoco">

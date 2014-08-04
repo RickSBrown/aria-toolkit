@@ -1,13 +1,18 @@
 /*
- * This module provides utility methods useful when dealing with ARIA.
- * It knows about the rules of ARIA beyond what can be prgramatically derived from the ARIA taxonomy.
- * 
- * The methods are "mixed-in" to the base aria toolkit class.
+ * Utility methods for working with ARIA in HTML.
  * 
  * Copyright (C) 2014  Rick Brown
  */
 define(["aria", "xpath", "aria.html"], function(aria, xpathQuery){
-
+	
+	/**
+	 * This module provides utility methods useful when dealing with ARIA.
+	 * 
+	 * It knows about the rules of ARIA beyond what can be programatically derived from the ARIA taxonomy.
+	 *
+	 * The methods are "mixed-in" to the base aria toolkit class.
+	 * @exports ariautils
+	 */
 	function AriaUtils()
 	{
 		var ESCAPE_ID_RE = /'/g,
@@ -26,10 +31,17 @@ define(["aria", "xpath", "aria.html"], function(aria, xpathQuery){
 					widget:true,
 					window:true};
 		/**
-		 * Gets the element that "aria-owns" this element
+		 * Gets the element that "aria-owns" this element.
 		 * @param {Element} element a potentially "aria-owned" DOM element
-		 * @param {boolean} showAll If true will return multiple owners, if found, even though this is invalid (result will be nodeList).
-		 * @return {Element|Nodelist|null} the element which owns the passed in element (if any) or null if no owner found
+		 * @param {boolean} [showAll] If true will return multiple owners, if found, even though this is invalid (result will be nodeList).
+		 * @return {Element|Nodelist} the owned of the element or null if no owner found.
+		 *
+		 * @example
+		 *	var owner = document.body.appendChild(document.createElement("div")),
+		 *		owned = document.body.appendChild(document.createElement("div"));
+		 *	owner.setAttribute("aria-owns", "kungfu");
+		 *	owned.setAttribute("id", "kungfu");
+		 *	console.log(aria.getOwner(owned) === owner);//This will log 'true'
 		 */
 		this.getOwner = function(element, showAll)
 		{
@@ -55,6 +67,12 @@ define(["aria", "xpath", "aria.html"], function(aria, xpathQuery){
 		 * Gets elements which this element "aria-owns".
 		 * @param {Element} element The 'owner' DOM element.
 		 * @return {Element[]} An array of "aria-owned" elements.
+		 *  @example
+		 *	var owner = document.body.appendChild(document.createElement("div")),
+		 *		owned = document.body.appendChild(document.createElement("div"));
+		 *	owner.setAttribute("aria-owns", "kungfu");
+		 *	owned.setAttribute("id", "kungfu");
+		 *	console.log(aria.getOwned(owner)[0] === owned);//This will log 'true'
 		 */
 		this.getOwned = function(element)
 		{
@@ -85,6 +103,10 @@ define(["aria", "xpath", "aria.html"], function(aria, xpathQuery){
 		 * to an array of IDs.
 		 * @param {string} val A space separated list of IDs
 		 * @returns {string[]} An array of the IDs in 'val'.
+		 * @example
+		 *	var element = document.createElement("div");
+		 *	element.setAttribute("aria-owns", "idA idB idC");
+		 *	aria.splitAriaIdList(element.getAttribute("aria-owns")); //returns ["idA", "idB", "idC"]
 		 */
 		this.splitAriaIdList = function(val){
 			var result;
@@ -105,6 +127,19 @@ define(["aria", "xpath", "aria.html"], function(aria, xpathQuery){
 		 * @param {boolean} implicit If true will also consider 'implicit' aria role.
 		 * @see: http://www.w3.org/TR/wai-aria/host_languages#implicit_semantics
 		 * @return {string} The role of this element, if found.
+		 * 
+		 * @example
+		 *	var element = document.createElement("span");
+		 *	element.setAttribute("role", "checkbox");
+		 *	console.log(aria.getRole(element)); //logs checkbox
+		 *
+		 * @example var element = document.createElement("input");
+		 * element.setAttribute("type", "checkbox");
+		 * console.log(aria.getRole(element)); //logs null
+		 *
+		 * @example var element = document.createElement("input");
+		 * element.setAttribute("type", "checkbox");
+		 * console.log(aria.getRole(element, true)); //logs checkbox
 		 */
 		this.getRole = function(element, implicit){
 			var result;
@@ -126,7 +161,10 @@ define(["aria", "xpath", "aria.html"], function(aria, xpathQuery){
 		/**
 		 * Determine if this role is an abstract ARIA role.
 		 * @param {string} role The role to check.
-		 * @return {boolean} true if this is an abstract role.
+		 * @return {boolean} true if this is an abstract role
+		 * @example
+		 *	console.log(aria.isAbstractRole("input")); //logs true
+		 *	console.log(aria.isAbstractRole("checkbox")); //logs false or something falsey
 		 */
 		this.isAbstractRole = function(role){
 			return (role && ABSTRACT_ROLES[role] && ABSTRACT_ROLES.hasOwnProperty(role));
@@ -211,10 +249,11 @@ define(["aria", "xpath", "aria.html"], function(aria, xpathQuery){
 			return result;
 		}
 
-		/*
+		/**
 		 * Helper for getElementsWithAriaAttr.
 		 * Builds an XPath query that selects all nodes with no role with "aria-*" attributes that are not global.
 		 * ./descendant-or-self::node()[not(@role)][@*[starts-with(name(), 'aria-') and not(name()='aria-label' or name()='aria-hidden' or etc etc etc)]]
+		 * @param {boolean} [includeRole] If true will also include elements with a "role" attribute.
 		 */
 		function buildAttributeQuery(includeRole)
 		{
