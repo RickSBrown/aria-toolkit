@@ -379,11 +379,40 @@ describe("ARIA", function() {
 			{
 				result = validator[method](element);
 			}
-			warnings = result.getWarnings();
-			failures = result.getFailures();
+			if(typeof result.get === "function")//it's a summary
+			{
+				warnings = result.get(validator.level.WARN);
+				failures = result.get(validator.level.ERROR);
+			}
+			else//it's an array of ValidationResults
+			{
+				warnings = getResultsByLevel(result, validator.level.WARN);
+				failures = getResultsByLevel(result, validator.level.ERROR);
+			}
 			expect(warnings.length).toEqual(warnCount);
 			expect(failures.length).toEqual(failCount);
 		}
+
+		/**
+		 *
+		 * @param {ValidationResult[]} results
+		 * @param {aria.level} level
+		 * @returns {ValidationResult[]}
+		 */
+		function getResultsByLevel(results, level){
+			var result;
+			if(level || level === 0)
+			{
+				result = results.filter(function(validationResult){
+					return validationResult.level === level;
+				});
+			}
+			else
+			{
+				result = results;
+			}
+			return result;
+		};
 	})();
 
 	/* HELPER TESTS */
