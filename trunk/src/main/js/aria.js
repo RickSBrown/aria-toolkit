@@ -7,7 +7,9 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 	var url = "${aria.rdf.url}";//The url where we can find the ARIA taxonomy
 	/**
 	 * This is the core aria toolkit AMD module.
-	 * <br/>
+	 * <br/><br/>
+	 * Note: if you use the layer file instead of AMD then you will be given one global: 'window.ARIA' (examples that use 'aria.' will be 'ARIA.' for you).
+	 * <br/><br/>
 	 * It knows what is in the WAI-ARIA taxonomy (the RDF); nothing more, nothing less.
 	 * <br/>
 	 * Since the taxonomy does not provide enough information for every situation it is highly probable that you will
@@ -167,7 +169,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 			if(nodeName)
 			{
 				template = replace(template, {name:nodeName});
-			}
+//			}
 			/**
 			 * Given an ARIA role will find the container role/s (if any) which "contain" this role.
 			 *

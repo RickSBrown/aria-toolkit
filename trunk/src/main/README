@@ -39,20 +39,7 @@ or open 'docs/index.html' in the distribution archive for a much prettier versio
 JAVASCRIPT FILES
 
 Javascript files you will find in the distribution archive:
-
-ValidationResult.js:
-aria-layer.js:
-aria.html.js:
-aria.js:
-aria.utils.js:
-aria.validator-layer.js:
-aria.validator.js:
-loadXml.js:
-mixin.js:
-replace.js:
-validation.runner-layer.js:
-validation.runner.js:
-xpath.js
+${js.built.filenames}
 
 These are AMD modules which are provided for granular use in other frameworks and tools. If you are going to use individual modules you
 will need an AMD loader, such as RequireJS: http://requirejs.org/docs/download.html
@@ -63,10 +50,10 @@ You will not need an AMD loader (the layers use Almond: https://github.com/jrbur
 They contain the module associated with the name of the layer file as well as all its dependencies (except the XML files).
 By default they add one global property "ARIA". Simply load the one you want like any other script, for example:
 
-<script type="text/javascript" src="js/aria.validator-layer.js"></script>
+<script type="text/javascript" src="${js.dir.name}/${aria.validator.module.name}-layer.js"></script>
 
-The directory 'js_debug' contains human readable versions
-The directory 'js' contains minified versions
+The directory '${js.debug.dir.name}' contains human readable versions
+The directory '${js.dir.name}' contains minified versions
 
 ************************
 

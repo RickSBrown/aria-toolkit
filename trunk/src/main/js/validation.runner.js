@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2014  Rick Brown
  */
-require(["aria.validator", "replace", "mixin"], function(aria, replace, mixin){
+require(["aria.validator", "ValidationResult", "replace", "mixin"], function(aria, ValidationResult, replace, mixin){
 
 	/**
 	 * This sits on top of the core validator module and "drives" it to run checks on an HTML window and format the results as HTML.
@@ -263,8 +263,8 @@ require(["aria.validator", "replace", "mixin"], function(aria, replace, mixin){
 	 */
 	Summary.prototype.toHtml = function(){
 		var roles = this.getRoles(),
-			failures = this.get(aria.level.ERROR),
-			warnings = this.get(aria.level.WARN),
+			failures = this.get(ValidationResult.level.ERROR),
+			warnings = this.get(ValidationResult.level.WARN),
 			passed = !failures.length,
 			cssClass = (passed? "pass": "fail"),
 			result = ["<div class='validatorResults "];
@@ -417,22 +417,16 @@ require(["aria.validator", "replace", "mixin"], function(aria, replace, mixin){
 
 	/**
 	 * Retrieve the validationResults from this summary.
-	 * The returned result is a copy of the underlying store so you can modify it safely.
+	 * 
 	 * @param {number} [level] If provided will only return instances at this severity level, otherwise all are returned.
-	 * Levels are provided by the ariavalidator module and will be either: level.WARN or level.ERRROR.
+	 * Levels are provided by the ValidationResult module and will be either: level.WARN or level.ERRROR.
 	 * @return {ValidationResult[]} The validationResults held in this summary.
 	 */
 	Summary.prototype.get = function(level){
-		var result = this.results;
-		if(level || level === 0)
+		var result = ValidationResult.filter(this.results, level);
+		if(!result)
 		{
-			result = result.filter(function(validationResult){
-				return validationResult.level === level;
-			});
-		}
-		else
-		{
-			result  = result.concat();
+			result = this.results.concat();
 		}
 		return result;
 	};
