@@ -13,7 +13,7 @@
 	<property name="build.js.debug.dir" location="${build.dir}/${js.debug.dir.name}"/>
 	<property name="dist.dir" location="dist"/>
 	<property name="test.build.dir" location="${build.dir}"/>
-	<property name="build.version" value="0.9"/>
+	<property name="build.version" value="0.10"/>
 	<property name="chrome-ext-dir-name" value="chrome-ext"/>
 	<property name="lib.dir" location="${basedir}/libs"/>
 	<property name="batik" value="batik-1.7"/>
