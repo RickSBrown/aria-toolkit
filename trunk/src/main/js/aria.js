@@ -169,7 +169,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 			if(nodeName)
 			{
 				template = replace(template, {name:nodeName});
-//			}
+			}
 			/**
 			 * Given an ARIA role will find the container role/s (if any) which "contain" this role.
 			 *
