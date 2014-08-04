@@ -4,6 +4,7 @@
 	<property name="aria.rdf.url" value="xml/aria-1.rdf"/>
 	<property name="aria.module.name" value="aria"/>
 	<property name="aria.validator.module.name" value="aria.validator"/>
+	<property name="aria.validator.runner.module.name" value="validation.runner"/>
 	<property name="src.dir" location="src"/>
 	<property name="build.dir" location="build"/>
 	<property name="js.dir.name" value="js"/>
@@ -63,6 +64,7 @@
 		<property name="r.js" value="${lib.dir}/requirejs/r.js" />
 		<optimize moduleName="${aria.module.name}"/>
 		<optimize moduleName="${aria.validator.module.name}"/>
+		<optimize moduleName="${aria.validator.runner.module.name}"/>
 		<path id="js.built.file.list">
 			<fileset dir="${build.js.debug.dir}" casesensitive="yes">
 				<include name="**/*.js"/>
@@ -93,7 +95,7 @@
 				<exclude name="${batik}/**"/>
 				<!--<exclude name="${js.debug.dir.name}/**"/>-->
 				<include name="xml/*.*"/>
-				<include name="${js.dir.name}/${aria.validator.module.name}-layer.js"/>
+				<include name="${js.dir.name}/${aria.validator.runner.module.name}-layer.js"/>
 			</fileset>
 		</copy>
 		<copy todir="${chromeExtDistDir}">
