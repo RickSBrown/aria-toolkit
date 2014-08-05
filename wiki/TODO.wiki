@@ -1,0 +1,7 @@
+#labels Phase-Requirements
+=Future development=
+
+This page lists ideas and plans for the further development of the toolkit.
+
+ * Transform the XML files to JSON at build time?
+ * Bundle the JSON versions of the XML files within the JS code to avoid an AJAX call to load them?
