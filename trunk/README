@@ -14,6 +14,13 @@ ARIA Toolkit provides:
 
 - An ARIA validator which allows you to check that your ARIA roles and attributes have been correctly implemented.
 
+The validator is different to many other tools because it performs dynamic analysis instead of static analysis.
+
+This means:
+- You get results that are accurate for your user agent.
+- Your page could be loaded from the server as XML/JSON, transformed to HTML in the client and it can still be validated.
+
+
 ************************
 
 BUILD
