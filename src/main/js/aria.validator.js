@@ -141,7 +141,8 @@ define(["aria.utils", "ValidationResult"], function(aria, ValidationResult){
 		this.checkAriaOwns = function(element)
 		{
 			//TODO check that it does not own itself
-			var attr="aria-owns", result = [], i, len, msg, next, nextElement, j, lenJ, nextJ, owners,
+			var attr="aria-owns", result = [], i, len, next, nextElement, j, lenJ, nextJ, owners,
+				document = element.ownerDocument,//deliberately shadow document to prevent silly errors in frames
 				owned = element.getAttribute(attr);
 			if(owned)
 			{
@@ -151,7 +152,7 @@ define(["aria.utils", "ValidationResult"], function(aria, ValidationResult){
 					next = owned[i];
 					owners = this.getOwner({
 						id:next,
-						ownerDocument: element.ownerDocument
+						ownerDocument: document
 					}, true);
 					if(owners)
 					{
@@ -170,7 +171,7 @@ define(["aria.utils", "ValidationResult"], function(aria, ValidationResult){
 						}
 						else
 						{
-							result.push(new ValidationResult({key:"ARIA_OWNS_NON_EXISTANT_ELEMENT", attr:attr, id:next}));
+							result.push(new ValidationResult({key:"ARIA_OWNS_NON_EXISTANT_ELEMENT", attr:attr, id:next, element:element}));
 						}
 						if(lenJ > 1)
 						{

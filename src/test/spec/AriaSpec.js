@@ -6,6 +6,15 @@
  * Copyright (C) 2014  Rick Brown
  */
 describe("ARIA", function() {
+	var supportedInputTypes = {};//
+
+	(function(){
+		var element = document.createElement("input");
+		["color", "date", "datetime", "datetime-local", "email", "month", "number", "range", "search", "tel", "time", "url", "week"].forEach(function(type){
+			element.setAttribute("type", type);
+			supportedInputTypes[type] = (element.type === type);
+		});
+	})();
 
 	/* CORE TESTS */
 	(function(){
@@ -146,7 +155,7 @@ describe("ARIA", function() {
 	(function(){
 		var validator = window.ARIA,
 			validatorReady = !!validator.checkAriaOwns;
-		
+
 		it("should mixin validator methods to ARIA", function(done) {
 			if(!validatorReady)
 			{
@@ -339,15 +348,17 @@ describe("ARIA", function() {
 					{id:"mixedAttrsAndRole", fail:0, warn:0},
 					{id:"nonglobalAttrsRightImplicitRole", fail:0, warn:1},
 					{id:"nonglobalAttrsWrongImplicitRole", fail:1, warn:0},
-					{id:"implicitRoleImplicitStates", fail:0, warn:0},
+					{id:"implicitRoleImplicitStates", fail:(supportedInputTypes['range']?[]:["UNSUPPORTED_ATTR_FOR_ROLE"]), warn:0},
 					{id:"mixedAttrsAndInvalidRoles", fail:0, warn:0}
 				],
 				funcName = "checkByAttribute";
 			attrChecks.forEach(function(check){
+				var expectedFail = (Array.isArray(check.fail)? check.fail.length : check.fail),
+					expectedWarn = (Array.isArray(check.warn)? check.warn.length : check.warn);
 				if(!check.nocount)
 				{
-					failCountTotal += check.fail;
-					warnCountTotal += check.warn;
+					failCountTotal += expectedFail;
+					warnCountTotal += expectedWarn;
 				}
 				it(funcName + " on element " + check.id, function(){
 					checkHelper(check.id, check.fail, check.warn, funcName);
@@ -364,13 +375,11 @@ describe("ARIA", function() {
 			});
 		})();
 
-		function checkHelper(id, failCount, warnCount, funcName, excludeRole)
+		function checkHelper(id, expectedFail, expectedWarn, funcName, excludeRole)
 		{
-			var method = funcName || "checkAriaOwns",
-				element = id.constructor === String? document.getElementById(id) : id,
-				result,
-				warnings,
-				failures;
+			var method = (funcName || "checkAriaOwns"), errorKeys,
+				element = (id.constructor === String? document.getElementById(id) : id),
+				result, warnings, failures;
 			if(excludeRole)
 			{
 				result = validator[method](element, element.nodeType === Node.ELEMENT_NODE? element.getAttribute("role") : "");
@@ -389,8 +398,32 @@ describe("ARIA", function() {
 				warnings = (validator.ValidationResult.filter(result, validator.ValidationResult.level.WARN) || []);
 				failures = (validator.ValidationResult.filter(result, validator.ValidationResult.level.ERROR) || []);
 			}
-			expect(warnings.length).toEqual(warnCount);
-			expect(failures.length).toEqual(failCount);
+			if(Array.isArray(expectedFail))
+			{
+				errorKeys = failures.map(function(validationError){
+					return validationError.key;
+				});
+				errorKeys.sort();
+				expectedFail.sort();
+				expect(errorKeys).toEqual(expectedFail);
+			}
+			else
+			{
+				expect(failures.length).toEqual(expectedFail);
+			}
+			if(Array.isArray(expectedWarn))
+			{
+				errorKeys = warnings.map(function(validationError){
+					return validationError.key;
+				});
+				errorKeys.sort();
+				expectedWarn.sort();
+				expect(errorKeys).toEqual(expectedWarn);
+			}
+			else
+			{
+				expect(warnings.length).toEqual(expectedWarn);
+			}
 		}
 	})();
 
@@ -432,17 +465,17 @@ describe("ARIA", function() {
 		getRoleHelper(getElement("input", "text"), "textbox", true);
 		getRoleHelper(getElement("input", "radio"), "radio", true);
 		getRoleHelper(getElement("input", "button"), "button", true);
-		getRoleHelper(getElement("input", "date"), "spinbutton", true);
+		getRoleHelper(getElement("input", "date"), (supportedInputTypes["date"]?"spinbutton":"textbox"), true);
 		getRoleHelper(getElement("input", "email"), "textbox", true);
 		getRoleHelper(getElement("input", "foo"), "textbox", true);
 		getRoleHelper(getElement("input", "checkbox"), "checkbox", true);
 		getRoleHelper(getElement("input", "password"), "textbox", true);
 		getRoleHelper(getElement("input", "image"), "button", true);
-		getRoleHelper(getElement("input", "number"), "spinbutton", true);
+		getRoleHelper(getElement("input", "number"), (supportedInputTypes["number"]?"spinbutton":"textbox"), true);
 		getRoleHelper(getElement("input", "reset"), "button", true);
 		getRoleHelper(getElement("input", "submit"), "button", true);
 		getRoleHelper(getElement("input", "tel"), "textbox", true);
-		getRoleHelper(getElement("input", "range"), "slider", true);
+		getRoleHelper(getElement("input", "range"), (supportedInputTypes["range"]?"slider":"textbox"), true);
 		getRoleHelper(getElement("textarea"), "textbox", true);
 		getRoleHelper(getElement("progress"), "progressbar", true);
 		getRoleHelper(getElement("option"), "option", true);
