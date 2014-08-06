@@ -192,7 +192,7 @@ define(["aria", "xpath", "loadXml"], function(aria, query, loadXml){
 
 		/**
 		 * If you load the aria-html XML yourself you can provide it to the toolkit here.
-		 * @param {DOM} The aria-html XML DOM.
+		 * @param {DOM} xml The aria-html XML DOM.
 		 */
 		this.setXml = function(xml){
 			xmlDoc = xml;
@@ -250,6 +250,11 @@ define(["aria", "xpath", "loadXml"], function(aria, query, loadXml){
 					next = modifyingAttributes[i];
 					if(element.hasAttribute(next))
 					{
+						/*
+						 * Note: this would give totally different results if we used "element.getAttribute(next)" instead of element[next]
+						 * The former would be more akin to static analysis (validating what the user set) while the latter is dynamic analysis
+						 * where we are validating what the browser truly 'understands' and what assistive technologies would be presented with.
+						 */
 						result += "[attributes/attribute[@name='" + next + "'][@value='" + element[next] + "']]";
 					}
 					else

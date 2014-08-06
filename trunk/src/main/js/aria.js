@@ -207,6 +207,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 		/**
 		 * Creates methods for getScope and getMustContain (and getConcept).
 		 * @param {string|string[]} nodeName Child elements of owl:Class e.g. role:mustContain or role:scope
+		 * @param {string} predicate
 		 */
 		function getScopeFactory(nodeName, predicate)
 		{
@@ -272,6 +273,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 		 * @param {string} [role] An ARIA role
 		 * @param {boolean} [firstMatch] Set to true to return a single node only
 		 * @param {string} [child] The name of a child element which refers to roles in an rdf:resource attribute
+		 * @param {string} predicate
 		 * @return {Element[]|Element|string[]} An array of matching nodes OR if firstMatch is true a single node. OR if
 		 * child is provided then an array of strings representing ARIA roles.
 		 */
@@ -351,7 +353,7 @@ define(["xpath", "loadXml", "replace"], function(query, loadXml, replace){
 
 			/**
 			 * Build a JS "class" that represents an ARIA role.
-			 * @param {Element} an owl:Class element from the ARIA taxonomy
+			 * @param {Element} classElement an owl:Class element from the ARIA taxonomy
 			 */
 			function buildConstructor(classElement)
 			{
