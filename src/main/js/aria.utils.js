@@ -125,6 +125,9 @@ define(["aria", "xpath", "aria.html"], function(aria, xpathQuery){
 		 * Gets the role from an element.
 		 * @param {Element} element The DOM element whose role we want.
 		 * @param {boolean} implicit If true will also consider 'implicit' aria role.
+		 * Note that the implicit role is dependent on user agent implementation. For example it doesn't matter
+		 * if your html has an input of type 'range' if your browser has not implemented it. It's a textbox, not
+		 * a slider.
 		 * @see: http://www.w3.org/TR/wai-aria/host_languages#implicit_semantics
 		 * @return {string} The role of this element, if found.
 		 * 
@@ -140,6 +143,10 @@ define(["aria", "xpath", "aria.html"], function(aria, xpathQuery){
 		 * @example var element = document.createElement("input");
 		 * element.setAttribute("type", "checkbox");
 		 * console.log(aria.getRole(element, true)); //logs checkbox
+		 *
+		 * @example var element = document.createElement("input");
+		 * element.setAttribute("type", "range");
+		 * console.log(aria.getRole(element, true)); //logs slider in a fully HTML5 compliant browser, otherwise textbox
 		 */
 		this.getRole = function(element, implicit){
 			var result;
