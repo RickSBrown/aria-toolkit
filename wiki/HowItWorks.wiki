@@ -22,3 +22,5 @@ The next core component is 'aria.html.js' which mainly exists to provide knowled
   * What is the implicit role of a given element
   * What states/properties are implicitly supported by a given element
   * What is the 'semantic strength' of a given element.
+
+Like 'aria.js' this module loads an [https://aria-toolkit.googlecode.com/svn/trunk/src/main/xml/aria-html.xml XML file] and uses XPath to build its rules.
