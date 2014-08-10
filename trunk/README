@@ -20,7 +20,6 @@ This means:
 - You get results that are accurate for your user agent.
 - Your page could be loaded from the server as XML/JSON, transformed to HTML in the client and it can still be validated.
 
-
 ************************
 
 BUILD
@@ -33,6 +32,25 @@ Once you have Ant set up open a terminal at the project root (the directory that
 ant dist
 
 A directory called "dist" will be created containing a zip file which holds the built project.
+
+************************
+
+UNIT TESTS
+
+The project uses Jasmine as a unit testing framework: http://jasmine.github.io/2.0/introduction.html
+
+From project root open a terminal and execute:
+
+ant test
+
+Then run a webserver in the root directory.
+For example, on *nix (Linux, Mac OSX, Unix, etc) or Cygwin (with python installed) on Windows:
+
+python -m SimpleHTTPServer 8000
+
+Then open your browser and go to:
+
+http://localhost:8000/build/SpecRunner.html
 
 ************************
 
